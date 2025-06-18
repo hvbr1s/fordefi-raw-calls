@@ -19,7 +19,7 @@ async def call_contract(evm_chain: str, vault_id: str, target_contract: str, cus
             "chain": f"evm_{evm_chain}_mainnet",
             "skip_prediction": True,
             "fail_on_prediction_failure": False,
-            "push_mode": "manual",
+            "push_mode": "auto",
             "data": {
                 "type": "hex",
                 "hex_data": data
