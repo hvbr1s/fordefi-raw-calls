@@ -30,8 +30,8 @@ async def call_contract(evm_chain: str, vault_id: str, target_contract: str, cus
                 "type": "custom",
                 "details": {
                     "type": "dynamic",
-                    "max_priority_fee_per_gas": "100000000", # 0.1 GWEI
-                    "max_fee_per_gas": "150000000" # 0.15 GWEI
+                    "max_priority_fee_per_gas": "2000000000", # 2 GWEI
+                    "max_fee_per_gas": "3000000000" # 3 GWEI
                 }
             },
             "to": target_contract,
@@ -63,7 +63,7 @@ async def main():
         ## Broadcasting tx
         fordefi_response  = await broadcast_tx(path, USER_API_TOKEN, signature, timestamp, request_body)
         print("✅ Transaction submitted successfully!")
-        print(json.dumps(fordefi_response.json()["id"], indent=2))
+        print(fordefi_response.json()["id"])
     except Exception as e:
         print(f"❌ Transaction failed: {str(e)}")
 
