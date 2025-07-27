@@ -1,5 +1,0 @@
-.venv
-.env
-secret/*
-uv.lock
-bin/
