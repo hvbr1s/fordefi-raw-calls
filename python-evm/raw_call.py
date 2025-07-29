@@ -16,7 +16,7 @@ async def call_contract(evm_chain: str, vault_id: str, target_contract: str, cus
         "type": "evm_transaction",
         "sign_mode": "triggered",
         "details": {
-            "chain": f"evm_{evm_chain}_mainnet",
+            "chain": f"evm_{evm_chain}",
             "skip_prediction": True,
             "fail_on_prediction_failure": False,
             "push_mode": "auto",
@@ -44,11 +44,11 @@ async def call_contract(evm_chain: str, vault_id: str, target_contract: str, cus
 ## Fordefi configuration
 USER_API_TOKEN = os.getenv("FORDEFI_API_TOKEN")
 EVM_VAULT_ID = os.getenv("EVM_VAULT_ID")
-evm_chain = "ethereum"
+evm_chain = "98866"
 path = "/api/v1/transactions"
 contract_address = "0x4e7d2186eb8b75fbdca867761636637e05baef1e" # CHANGE to your target contract address
 custom_note = "Raw Call!" # Optional note
-raw_call_data = "0x0efe6a8b000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000000000000000000000000000000000000186a00000000000000000000000000000000000000000000000000000000000000000"
+raw_call_data = "0x1a4d01d200000000000000000000000000000000000000000000010688eee5fc3610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ebef6dad9544400000"
 value = "0" # The value of native currency to send this transaction with (in wei)
 
 async def main():

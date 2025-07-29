@@ -11,14 +11,6 @@ async function requestAddStake() {
   const currentEpoch = Number(systemState.epoch);
   console.log(`Current epoch: ${currentEpoch}`);
 
-  // Optional: List available validators for staking
-  // console.log('Available validators:');
-  // systemState.activeValidators.forEach((validator, index) => {
-  //   console.log(`${index + 1}. Name: ${validator.name}`);
-  //   console.log(`   Validator Address: ${validator.suiAddress}`);
-  //   console.log(`   Staking Pool ID: ${validator.stakingPoolId}`);
-  // });
-
   const tx = new Transaction();
   tx.setSender(fordefiConfig.senderAddress);
   tx.setGasOwner(fordefiConfig.senderAddress);
