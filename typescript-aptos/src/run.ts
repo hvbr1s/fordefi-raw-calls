@@ -2,17 +2,17 @@ import { createAndSignTx, get_tx } from './process_tx';
 import { signWithPrivateKey } from './signer';
 import { buildPayload } from './serializer';
 import { fordefiConfig } from './config';
+import { error } from 'console';
 
 
 async function main(): Promise<void> {
-
   // Partially sign transaction with fee-payer vault
   const requestBody = JSON.stringify(await buildPayload(fordefiConfig));
   const timestamp = new Date().getTime();
-  const feePayerVaultPayload = `${fordefiConfig.apiPathEndpoint}|${timestamp}|${requestBody}`;
-  const signedPayloadOne = await signWithPrivateKey(feePayerVaultPayload, fordefiConfig.privateKeyPem);
+  const payload = `${fordefiConfig.apiPathEndpoint}|${timestamp}|${requestBody}`;
+  const signedPayloadOne = await signWithPrivateKey(payload, fordefiConfig.privateKeyPem);
 
-  console.log("Submitting transaction to Fordefi for partial signature 🔑")
+  console.log("Submitting transaction to Fordefi for signature 🔑")
   const response = await createAndSignTx(
     fordefiConfig.apiPathEndpoint, 
     fordefiConfig.accessToken, 
@@ -27,9 +27,8 @@ async function main(): Promise<void> {
 
   if (signedFordefiTx){
     console.log("Transaction fully signed and submitted to network ✅");
-    console.log(`Final transaction ID: ${signedFordefiTx.data.id}`);
-    const fullySignedTx = await get_tx(fordefiConfig.apiPathEndpoint, fordefiConfig.accessToken,signedFordefiTx.data.id)
-    console.log(fullySignedTx)
+    console.log(`Final transaction ID: ${signedFordefiTx.id}`);
+    const fullySignedTx = await get_tx(fordefiConfig.apiPathEndpoint, fordefiConfig.accessToken,signedFordefiTx.id)
   }
 }
 

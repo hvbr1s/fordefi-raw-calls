@@ -1,15 +1,8 @@
 import dotenv from "dotenv";
 import {
-  Account,
-  AccountAddress,
-  AccountAuthenticator,
   Aptos,
   AptosConfig,
-  Deserializer,
-  Serializer,
   Network,
-  NetworkToNetworkName,
-  SimpleTransaction,
 } from "@aptos-labs/ts-sdk";
 import { FordefiAptosConfig } from "./config";
 
@@ -23,7 +16,6 @@ const aptos = new Aptos(config);
 
 export async function buildPayload(fordefiConfig: FordefiAptosConfig){
     const originVaultAddress = fordefiConfig.originAddress
-    const feePayerAddress = fordefiConfig.feePayer
     const destinationAddress = fordefiConfig.destAddress
 
     const senderAccount = await aptos.account.getAccountInfo({
@@ -34,15 +26,20 @@ export async function buildPayload(fordefiConfig: FordefiAptosConfig){
 
     console.log(`Current sequence number for ${originVaultAddress}: ${sequenceNumber}`);
 
+    const txCount = await aptos.getAccountTransactionsCount({
+        accountAddress: originVaultAddress,
+    });
+    console.log("Account transaction count: ", txCount)
+
     let transaction = await aptos.transaction.build.simple({
         sender: originVaultAddress,
-        withFeePayer: true,
+        withFeePayer: false,
         data: {
           function: "0x1::aptos_account::transfer",
           functionArguments: [destinationAddress, fordefiConfig.amount],
         }
       });
-    transaction.feePayerAddress = AccountAddress.from(feePayerAddress)
+
     const rawTransaction = transaction.rawTransaction
     console.debug("Transaction", transaction)
 
@@ -56,12 +53,13 @@ export async function buildPayload(fordefiConfig: FordefiAptosConfig){
     const base64EncodedTransaction = Buffer.from(txBytes).toString('base64');
 
     const payload = {
-        vault_id: fordefiConfig.feePayerVault,
+        vault_id: fordefiConfig.originVault,
         signer_type: 'api_signer',
         sign_mode: 'auto',
         type: "aptos_transaction",
         details: {
-            skip_prediction: false,
+            skip_prediction: true,
+            fail_on_prediction_failure: false,
             type: 'aptos_serialized_entry_point_payload',
             chain: 'aptos_mainnet',
             serialized_transaction_payload: base64EncodedTransaction,

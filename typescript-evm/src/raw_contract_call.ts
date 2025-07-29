@@ -7,6 +7,9 @@ async function main() {
     if (!provider) throw new Error("Failed to initialize provider");
     let web3Provider = new ethers.BrowserProvider(provider); 
     const signer = await web3Provider.getSigner();
+
+    const balance = await web3Provider.getBalance(fordefiConfig.address);
+    console.log(`Balance of ${fordefiConfig.address}:`, ethers.formatEther(balance), "ETH");
   
     const tx = await signer.sendTransaction({
       to: CONTRACT_ADDRESS,

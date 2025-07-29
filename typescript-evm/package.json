@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "call": "npx ts-node src/raw_contract_call.ts"
+    "call": "npx ts-node src/raw_contract_call.ts",
+    "abi": "npx ts-node src/abi_call.ts"
   },
   "keywords": [],
   "author": "",
