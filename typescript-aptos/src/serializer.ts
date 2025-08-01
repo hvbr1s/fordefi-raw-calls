@@ -35,10 +35,11 @@ export async function buildPayload(fordefiConfig: FordefiAptosConfig){
         sender: originVaultAddress,
         withFeePayer: false,
         data: {
-          function: "0x1::aptos_account::transfer",
-          functionArguments: [destinationAddress, fordefiConfig.amount],
-        }
-      });
+            function: "0x1::primary_fungible_store::transfer",
+            typeArguments: ["0x1::object::ObjectCore"],
+            functionArguments: [fordefiConfig.asset, destinationAddress, fordefiConfig.amount],
+          }
+      }); // this transaction calls the transfer function on the USDC Object to perform a FA transfer
 
     const rawTransaction = transaction.rawTransaction
     console.debug("Transaction", transaction)
