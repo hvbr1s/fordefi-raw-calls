@@ -14,7 +14,7 @@ async def call_contract(evm_chain: str, vault_id: str, target_contract: str, cus
         "vault_id": vault_id,
         "note": custom_note,
         "type": "evm_transaction",
-        "sign_mode": "triggered",
+        "sign_mode": "auto", # triggered
         "details": {
             "chain": f"evm_{evm_chain}",
             "skip_prediction": True,
