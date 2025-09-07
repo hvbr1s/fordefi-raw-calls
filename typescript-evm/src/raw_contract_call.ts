@@ -1,4 +1,4 @@
-import { fordefiConfig, CONTRACT_ADDRESS, CALL_DATA } from './config';
+import { fordefiConfig, CONTRACT_ADDRESS, RAW_CALL_DATA } from './config';
 import { getProvider } from './get-provider';
 import { ethers } from 'ethers';
 
@@ -13,7 +13,7 @@ async function main() {
   
     const tx = await signer.sendTransaction({
       to: CONTRACT_ADDRESS,
-      data: CALL_DATA,
+      data: RAW_CALL_DATA,
       gasLimit: 20_0000n,
       maxFeePerGas: 1_000_000_000n, // in wei
       maxPriorityFeePerGas: 100_000_000n, // in wei

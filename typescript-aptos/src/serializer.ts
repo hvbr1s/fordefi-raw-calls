@@ -36,7 +36,8 @@ export async function buildPayload(fordefiConfig: FordefiAptosConfig){
         withFeePayer: false,
         data: {
             function: "0x1::primary_fungible_store::transfer",
-            typeArguments: ["0x1::object::ObjectCore"],
+            // typeArguments: ["0x1::object::ObjectCore"],
+            typeArguments: ["0x1::fungible_asset::Metadata"],
             functionArguments: [fordefiConfig.asset, destinationAddress, fordefiConfig.amount],
           }
       }); // this transaction calls the transfer function on the USDC Object to perform a FA transfer
