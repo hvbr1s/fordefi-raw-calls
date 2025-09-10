@@ -7,7 +7,8 @@
     "raw": "npx ts-node src/raw_contract_call.ts",
     "abi": "npx ts-node src/abi_call.ts",
     "fhe": "npx hardhat run src/fhe-contracts.ts --network sepolia",
-    "read": "npx ts-node src/read-messages.ts"
+    "verify":"npx hardhat verify --network sepolia 0x382E525C690C003f173fdF57270FA0b04721e7F7"
+
   },
   "keywords": [],
   "author": "",
@@ -24,8 +25,12 @@
   },
   "dependencies": {
     "@fordefi/web3-provider": "^0.3.0",
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@nomiclabs/hardhat-etherscan": "^3.1.8",
+    "@types/node-fetch": "^2.6.13",
     "@zama-fhe/relayer-sdk": "^0.2.0",
     "dotenv": "^16.4.7",
-    "ethers": "^6.14.1"
+    "ethers": "^6.14.1",
+    "node-fetch": "^3.3.2"
   }
 }
