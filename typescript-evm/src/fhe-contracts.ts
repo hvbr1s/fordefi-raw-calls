@@ -66,8 +66,6 @@ async function main() {
         const handleBytes = encryptedValue.handles[0];
         console.log("🔍 Handle bytes:", handleBytes);
         
-        // For FHE contracts, the encrypted handle should be passed as bytes32
-        // This handle represents the externalEuint32 parameter in the contract
         const handleAsBytes32 = ethers.hexlify(handleBytes!);
         console.log("🔍 Handle as bytes32:", handleAsBytes32);
         console.log("🔍 Handle length:", handleAsBytes32.length, "characters (should be 66: 0x + 64 hex chars)");
@@ -83,15 +81,9 @@ async function main() {
         const balance = await web3Provider.getBalance(signerAddress);
         console.log("🔍 Signer balance:", ethers.formatEther(balance), "ETH");
         
-        // Check if this network supports FHE
-        console.log("🔍 Checking FHE network compatibility...");
         console.log("🔍 Network chain ID:", await web3Provider.getNetwork().then(n => n.chainId));
         
-        // Try to call a simple contract method first to see if the contract is responsive
-        try {
-            // Let's try to call the contract with empty/dummy data to see what error we get
-            console.log("🔍 Testing contract interaction with minimal data...");
-            
+        try {            
             const gasEstimate = await messengerContract.sendMessage!.estimateGas(
                 DESTINATION_ADDRESS,
                 handleAsBytes32,
@@ -106,17 +98,6 @@ async function main() {
             if (gasError.data) {
                 console.log("🔍 Error data:", gasError.data);
             }
-            
-            // Check if this is a known FHE-related error
-            if (gasError.message.includes('missing revert data')) {
-                console.log("💡 This error typically occurs when:");
-                console.log("   1. The network doesn't have FHE precompiles deployed");
-                console.log("   2. The FHE configuration doesn't match the network");
-                console.log("   3. The contract is trying to use FHE operations on an unsupported network");
-                console.log("💡 Consider using Zama's devnet or a properly configured FHE testnet");
-            }
-            
-            // Don't throw here, continue to see if we get more info
         }
         
         const tx = await messengerContract.sendMessage!(
