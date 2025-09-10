@@ -1,9 +1,10 @@
 import { fordefiConfig, CONTRACT_ADDRESS, DESTINATION_ADDRESS } from './config';
-import { createInstance, SepoliaConfig } from "@zama-fhe/relayer-sdk/node";
 import { getProvider } from './get-provider';
 import { ethers } from 'ethers';
+import hre from 'hardhat';
 
 // Our contract ABI's is at  https://sepolia.etherscan.io/address/0x848bb922511fff65edd121790a049cd8976585ac#code
+const SEPOLIA_CONTRACT = "0x848Bb922511fFf65EDD121790a049cD8976585aC";
 const MESSENGER_ABI = [
     "function sendMessage(address _to, uint256 message, bytes calldata inputProof) external",
     "event Message(address indexed _from, address indexed _to, uint256 message)"
@@ -13,9 +14,8 @@ async function main() {
     try {
         console.log("Starting FHE message encryption...");
         
-        // Initialize FHE instance
-        const instance = await createInstance(SepoliaConfig);
-        console.log("✅ FHE instance created");
+        await hre.fhevm.initializeCLIApi();
+        console.log("✅ FHE instance initialized via Hardhat plugin");
 
         // Convert text to number (ensure it fits in uint32)
         const messageText = "hello Fordefi!";
@@ -28,20 +28,14 @@ async function main() {
         const numericValue = textToNumber(messageText);
         console.log(`📝 Converting "${messageText}" to number: ${numericValue}`);
 
-        const buffer = instance.createEncryptedInput(
-            CONTRACT_ADDRESS, // Your Messenger contract address
-            fordefiConfig.address, // Your vault address
-        );
+        const encryptedValue = await hre.fhevm
+            .createEncryptedInput(SEPOLIA_CONTRACT, fordefiConfig.address)
+            .add32(numericValue)
+            .encrypt();
 
-        buffer.add32(numericValue);
-        console.log("🔒 Added value to encryption buffer");
-
-        // Encrypt the value
-        console.log("⏳ Encrypting message...");
-        const encryptedInput = await buffer.encrypt();
         console.log("✅ Message encrypted successfully!");
-        console.log("📦 Encrypted handles:", encryptedInput.handles);
-        console.log("🔐 Input proof length:", encryptedInput.inputProof?.length || 0);
+        console.log("📦 Encrypted handles:", encryptedValue.handles);
+        console.log("🔐 Input proof length:", encryptedValue.inputProof?.length || 0);
 
         const provider = await getProvider(fordefiConfig);
         if (!provider) throw new Error("Failed to initialize provider");
@@ -59,8 +53,8 @@ async function main() {
         
         const tx = await messengerContract.sendMessage!(
             DESTINATION_ADDRESS,
-            encryptedInput.handles[0],
-            encryptedInput.inputProof  
+            encryptedValue.handles[0],
+            encryptedValue.inputProof  
         );
 
         console.log("🔗 Transaction hash:", tx.hash);
