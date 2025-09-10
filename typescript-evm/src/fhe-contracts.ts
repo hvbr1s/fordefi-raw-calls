@@ -2,9 +2,9 @@ import { fordefiConfig, CONTRACT_ADDRESS, DESTINATION_ADDRESS } from './config';
 import { getProvider } from './get-provider';
 import { ethers } from 'ethers';
 import hre from 'hardhat';
+import { encodeTextWithLength, displayEncodingProcess } from './text-encoding';
 
 // Our contract ABI's is at  https://sepolia.etherscan.io/address/0x848bb922511fff65edd121790a049cd8976585ac#code
-// Note: externalEuint32 is represented as bytes32 in the ABI
 const MESSENGER_ABI = [
     "function sendMessage(address _to, bytes32 message, bytes calldata inputProof) external",
     "event Message(address indexed _from, address indexed _to, bytes32 message)"
@@ -17,16 +17,16 @@ async function main() {
         await hre.fhevm.initializeCLIApi();
         console.log("✅ FHE instance initialized via Hardhat plugin");
 
-        // Convert text to number (ensure it fits in uint32)
-        const messageText = "hello Fordefi!";
-        const textToNumber = (text: string): number => {
-            const sum = text.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-            // Ensure it fits in uint32 range (0 to 4,294,967,295)
-            return sum % (2**32);
-        };
-
-        const numericValue = textToNumber(messageText);
-        console.log(`📝 Converting "${messageText}" to number: ${numericValue}`);
+        // Convert text to reversible encoded number (ensure it fits in uint32)
+        const messageText = "Yo!";  
+        console.log("🔤 Starting text encoding process...");
+        
+        // Display the encoding process
+        displayEncodingProcess(messageText);
+        
+        // Encode the text to a single number
+        const numericValue = encodeTextWithLength(messageText);
+        console.log(`✅ Final encoded value: ${numericValue}`);
 
         const encryptedValue = await hre.fhevm
             .createEncryptedInput(CONTRACT_ADDRESS, fordefiConfig.address)
