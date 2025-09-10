@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 import hre from 'hardhat';
 import { decodeTextWithLength, getCharacterBreakdown } from './text-encoding';
 
-// The ciphertext handle to decrypt
+// The ciphertext handle from the contrcat call event to decrypt
 const CIPHERTEXT_HANDLE = "0x739aa16c09116bc1bf951545ba316a0cabcd3763d3000000000000aa36a70400";
 
 async function decryptMessage() {
@@ -100,33 +100,11 @@ async function decryptMessage() {
                 console.error("❌ Failed to decode text:", error.message);
                 console.log("💡 This might be an old message using the sum encoding method");
                 
-                // Fallback: check if it's the old "hello Fordefi!" message
-                if (numericValue === 1300) {
-                    console.log("✅ Confirmed: This matches 'hello Fordefi!' (sum of char codes = 1300)");
-                    console.log("📋 This uses the old sum-based encoding, not the new reversible encoding");
-                }
             }
         }
 
     } catch (error: any) {
         console.error('❌ Decryption Error:', error.message);
-        
-        // Common error scenarios
-        if (error.message.includes('ACL')) {
-            console.log("💡 ACL Error: The ciphertext might not have proper access control set.");
-            console.log("   Make sure the contract allows the user to decrypt this ciphertext.");
-        }
-        
-        if (error.message.includes('handle')) {
-            console.log("💡 Handle Error: The ciphertext handle might be invalid or expired.");
-            console.log("   Make sure you're using the correct handle from the transaction event.");
-        }
-        
-        if (error.message.includes('signature')) {
-            console.log("💡 Signature Error: The EIP712 signature might be invalid.");
-            console.log("   Make sure the signer address matches the one used in the contract.");
-        }
-        
         console.error('Full error:', error);
     }
 }
