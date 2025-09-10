@@ -1,7 +1,11 @@
+import type { HardhatUserConfig } from "hardhat/config";
 import "@fhevm/hardhat-plugin";
 import "@nomicfoundation/hardhat-ethers";
 import "@typechain/hardhat";
-import type { HardhatUserConfig } from "hardhat/config";
+import "@nomiclabs/hardhat-etherscan";
+import dotenv from 'dotenv';
+
+dotenv.config()
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -27,6 +31,11 @@ const config: HardhatUserConfig = {
   typechain: {
     outDir: "types",
     target: "ethers-v6",
+  },
+  etherscan: {
+    apiKey: {
+      sepolia: process.env.ETHERSCAN_API_KEY || "",
+    },
   },
 };
 

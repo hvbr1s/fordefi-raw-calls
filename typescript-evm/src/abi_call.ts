@@ -15,7 +15,7 @@ async function main() {
     // Write ops
     const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, signer)
     const amount = ethers.parseUnits("0.00001", DECIMALS);
-    const tx = await contract.transfer(DESTINATION_ADDRESS, amount)
+    const tx = await contract.transfer!(DESTINATION_ADDRESS, amount)
     console.log("Transaction hash:", tx.hash);
   
     const receipt = await tx.wait();
