@@ -1,13 +1,13 @@
-import { fordefiConfig, CONTRACT_ADDRESS, DESTINATION_ADDRESS } from './config';
+import { fordefiConfig, CONTRACT_ADDRESS, DESTINATION_ADDRESS, MESSAGE } from './config';
 import { getProvider } from './get-provider';
 import { ethers } from 'ethers';
 import hre from 'hardhat';
-import { encodeTextWithLength, displayEncodingProcess } from './text-encoding';
+import { encodeTextWithLength, displayEncodingProcess, encodeTextForUint256 } from './text-encoding';
 
-// Our contract ABI's is at  https://sepolia.etherscan.io/address/0x848bb922511fff65edd121790a049cd8976585ac#code
+// Updated ABI for euint256 support - using bytes32 for externalEuint256 in ABI
 const MESSENGER_ABI = [
     "function sendMessage(address _to, bytes32 message, bytes calldata inputProof) external",
-    "event Message(address indexed _from, address indexed _to, bytes32 message)"
+    "event Message(address indexed _from, address indexed _to, uint256 message)"
 ];
 
 async function main() {
@@ -17,20 +17,26 @@ async function main() {
         await hre.fhevm.initializeCLIApi();
         console.log("✅ FHE instance initialized via Hardhat plugin");
 
-        // Convert text to reversible encoded number (ensure it fits in uint32)
-        const messageText = "Yo!";  
+        // Convert text to reversible encoded number for uint256
         console.log("🔤 Starting text encoding process...");
         
         // Display the encoding process
-        displayEncodingProcess(messageText);
+        displayEncodingProcess(MESSAGE);
         
-        // Encode the text to a single number
-        const numericValue = encodeTextWithLength(messageText);
-        console.log(`✅ Final encoded value: ${numericValue}`);
+        // Choose encoding based on message length
+        let numericValue: bigint;
+        if (MESSAGE.length > 3) {
+            numericValue = encodeTextForUint256(MESSAGE);
+            console.log(`✅ Final encoded value (uint256): ${numericValue.toString()}`);
+        } else {
+            // Use legacy encoding for short messages
+            numericValue = BigInt(encodeTextWithLength(MESSAGE));
+            console.log(`✅ Final encoded value (legacy): ${numericValue.toString()}`);
+        }
 
         const encryptedValue = await hre.fhevm
             .createEncryptedInput(CONTRACT_ADDRESS, fordefiConfig.address)
-            .add32(numericValue)
+            .add256(numericValue)
             .encrypt();
 
         console.log("✅ Message encrypted successfully!");
@@ -39,21 +45,16 @@ async function main() {
         console.log("🔐 Input proof (first 100 bytes):", encryptedValue.inputProof ? ethers.hexlify(encryptedValue.inputProof.slice(0, 100)) : "undefined");
 
         const provider = await getProvider(fordefiConfig);
-        if (!provider) throw new Error("Failed to initialize provider");
+        if (!provider) throw new Error("Failed to initialize Fordefi Web3 provider");
         
         const web3Provider = new ethers.BrowserProvider(provider);
         const signer = await web3Provider.getSigner();
         
         // Debug: Check addresses
-        const signerAddress = await signer.getAddress();
-        console.log("🔍 Signer address:", signerAddress);
-        console.log("🔍 Config address:", fordefiConfig.address);
+        console.log("🔍 Signer address:", fordefiConfig.address);
         console.log("🔍 Destination address:", DESTINATION_ADDRESS);
         
-        if (signerAddress.toLowerCase() !== fordefiConfig.address.toLowerCase()) {
-            console.warn("⚠️ Address mismatch detected!");
-        }
-
+        // Create contract instance
         const messengerContract = new ethers.Contract(
             CONTRACT_ADDRESS,
             MESSENGER_ABI,
@@ -62,7 +63,7 @@ async function main() {
 
         console.log("📤 Sending encrypted message to contract...");
         
-        // Convert the encrypted handle (Uint8Array) to bytes32 format
+        // Convert the encrypted handle (Uint8Array) to bytes32 format for externalEuint256
         const handleBytes = encryptedValue.handles[0];
         console.log("🔍 Handle bytes:", handleBytes);
         
@@ -73,28 +74,18 @@ async function main() {
         // The inputProof is used by FHE.fromExternal() to validate the encrypted input
         console.log("🔍 Input proof for validation:", encryptedValue.inputProof ? "present" : "missing");
         
-        // Debug: Check if the contract exists and has code
-        const contractCode = await web3Provider.getCode(CONTRACT_ADDRESS);
-        console.log("🔍 Contract has code:", contractCode !== "0x");
-        
-        // Debug: Check balance
-        const balance = await web3Provider.getBalance(signerAddress);
-        console.log("🔍 Signer balance:", ethers.formatEther(balance), "ETH");
-        
-        console.log("🔍 Network chain ID:", await web3Provider.getNetwork().then(n => n.chainId));
-        
+        // Debug: Check balance and gas estimate
+        const balance = await web3Provider.getBalance(fordefiConfig.address);
+        console.log("⛽ Signer balance:", ethers.formatEther(balance), "ETH");        
         try {            
             const gasEstimate = await messengerContract.sendMessage!.estimateGas(
                 DESTINATION_ADDRESS,
                 handleAsBytes32,
                 encryptedValue.inputProof
             );
-            console.log("🔍 Gas estimate:", gasEstimate.toString());
+            console.log("⛽ Gas estimate:", gasEstimate.toString());
         } catch (gasError: any) {
             console.error("❌ Gas estimation failed:", gasError.message);
-            console.error("This suggests the FHE operations are not supported on this network");
-            
-            // Try to decode the error if possible
             if (gasError.data) {
                 console.log("🔍 Error data:", gasError.data);
             }

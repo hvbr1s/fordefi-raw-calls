@@ -2,18 +2,18 @@ import { fordefiConfig, CONTRACT_ADDRESS } from './config';
 import { getProvider } from './get-provider';
 import { ethers } from 'ethers';
 import hre from 'hardhat';
-import { decodeTextWithLength, getCharacterBreakdown } from './text-encoding';
+import { decodeTextWithLength, getCharacterBreakdown, decodeTextFromUint256 } from './text-encoding';
 
-// The ciphertext handle from the contrcat call event to decrypt
-const CIPHERTEXT_HANDLE = "0x739aa16c09116bc1bf951545ba316a0cabcd3763d3000000000000aa36a70400";
+// The ciphertext handle from the contract call event to decrypt
+const CIPHERTEXT_HANDLE = "0xB93A6A358F229878F1A7E226203B79D0ABDB6500AA000000000000AA36A70800";
 
 async function decryptMessage() {
     try {
         console.log("🔓 Starting FHE message decryption...");
         
-        // Initialize FHE instance
+        // Initialize Zama FHE instance
         await hre.fhevm.initializeCLIApi();
-        console.log("✅ FHE instance initialized via Hardhat plugin");
+        console.log("✅ FHE instance initialized!");
 
         const provider = await getProvider(fordefiConfig);
         if (!provider) throw new Error("Failed to initialize provider");
@@ -40,7 +40,7 @@ async function decryptMessage() {
 
         // Step 3: Set up EIP712 parameters
         const startTimeStamp = Math.floor(Date.now() / 1000).toString();
-        const durationDays = '10'; // Valid for 10 days
+        const durationDays = '10';
         const contractAddresses = [CONTRACT_ADDRESS];
 
         console.log("📝 Creating EIP712 signature request...");
@@ -76,30 +76,90 @@ async function decryptMessage() {
         );
 
         // Step 5: Extract the decrypted value
+        console.log("🔍 Decryption result keys:", Object.keys(result));
+        console.log("🔍 Full result:", result);
+        
         const decryptedValue = result[CIPHERTEXT_HANDLE];
         console.log("🎉 Decrypted value:", decryptedValue);
         
+        if (decryptedValue === undefined || decryptedValue === null) {
+            console.error("❌ No decrypted value found for handle:", CIPHERTEXT_HANDLE);
+            console.log("💡 Available handles in result:", Object.keys(result));
+            
+            // Try to find the correct handle (case-insensitive or different format)
+            const availableHandles = Object.keys(result);
+            const normalizedHandle = CIPHERTEXT_HANDLE.toLowerCase();
+            
+            for (const handle of availableHandles) {
+                if (handle.toLowerCase() === normalizedHandle) {
+                    console.log("✅ Found matching handle with different case:", handle);
+                    const actualValue = result[handle];
+                    console.log("🎉 Actual decrypted value:", actualValue);
+                    
+                    if (actualValue !== undefined && actualValue !== null) {
+                        // Use the found value
+                        const bigintValue = typeof actualValue === 'bigint' ? actualValue : BigInt(actualValue);
+                        console.log("📝 Converted value:", bigintValue.toString());
+                        
+                        // Continue with decoding...
+                        try {
+                            const decodedText = decodeTextFromUint256(bigintValue);
+                            console.log("🎉 Decoded text (uint256):", `"${decodedText}"`);
+                            return;
+                        } catch (error: any) {
+                            console.log("❌ Uint256 decoding failed, trying legacy:", error.message);
+                            try {
+                                const numericValue = Number(bigintValue);
+                                const decodedText = decodeTextWithLength(numericValue);
+                                console.log("🎉 Decoded text (legacy):", `"${decodedText}"`);
+                                return;
+                            } catch (legacyError: any) {
+                                console.error("❌ All decoding failed:", legacyError.message);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            throw new Error("No valid decrypted value found");
+        }
+        
         // Convert back to original message using reversible decoding
-        const numericValue = typeof decryptedValue === 'bigint' ? Number(decryptedValue) : decryptedValue;
-        if (typeof numericValue === 'number') {
-            console.log("📝 Decrypted numeric value:", numericValue);
+        const bigintValue = typeof decryptedValue === 'bigint' ? decryptedValue : BigInt(decryptedValue);
+        console.log("📝 Decrypted value:", bigintValue.toString());
+        
+        try {
+            // Try uint256 decoding first (for longer messages)
+            const decodedText = decodeTextFromUint256(bigintValue);
+            console.log("🎉 Decoded text (uint256):", `"${decodedText}"`);
+            
+            // Show the character breakdown
+            const breakdown = getCharacterBreakdown(decodedText);
+            const charDisplay = breakdown.slice(0, 10).map(({char, code}) => `'${char}':${code}`).join(', ');
+            console.log("📋 Character breakdown:", charDisplay + (breakdown.length > 10 ? '...' : ''));
+            
+            console.log("✅ Successfully decoded the encrypted message!");
+            
+        } catch (error: any) {
+            console.log("❌ Uint256 decoding failed:", error.message);
+            console.log("💡 Trying legacy decoding methods...");
             
             try {
-                // Decode the number back to text
+                // Try legacy uint32 decoding
+                const numericValue = Number(bigintValue);
                 const decodedText = decodeTextWithLength(numericValue);
-                console.log("🎉 Decoded text:", `"${decodedText}"`);
+                console.log("🎉 Decoded text (legacy):", `"${decodedText}"`);
                 
                 // Show the character breakdown
                 const breakdown = getCharacterBreakdown(decodedText);
                 const charDisplay = breakdown.map(({char, code}) => `'${char}':${code}`).join(', ');
                 console.log("📋 Character breakdown:", charDisplay);
                 
-                console.log("✅ Successfully decoded the encrypted message!");
+                console.log("✅ Successfully decoded using legacy method!");
                 
-            } catch (error: any) {
-                console.error("❌ Failed to decode text:", error.message);
-                console.log("💡 This might be an old message using the sum encoding method");
-                
+            } catch (legacyError: any) {
+                console.error("❌ All decoding methods failed:", legacyError.message);
+                console.log("💡 This might be an unsupported encoding format");
             }
         }
 
@@ -109,7 +169,6 @@ async function decryptMessage() {
     }
 }
 
-// Run the decryption
 main().catch(console.error);
 
 async function main() {
