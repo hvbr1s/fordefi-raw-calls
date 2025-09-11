@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 import hre from 'hardhat';
 import { getCharacterBreakdown, decodeTextFromUint256 } from './text-encoding';
 
-const CIPHERTEXT_HANDLE = "0xfeab08ddc5c297582f61adc5cfe975d53c22ee4c0c000000000000aa36a70800";
+const CIPHERTEXT_HANDLE = "0xe8ebeb74255709333b76f65902eea37e2ab59aae72000000000000aa36a70800";
 
 async function decryptMessage() {
     try {
