@@ -5,15 +5,15 @@ import hre from 'hardhat';
 import { decodeTextWithLength, getCharacterBreakdown } from './text-encoding';
 
 // The ciphertext handle from the contrcat call event to decrypt
-const CIPHERTEXT_HANDLE = "0x739aa16c09116bc1bf951545ba316a0cabcd3763d3000000000000aa36a70400";
+const CIPHERTEXT_HANDLE = "0x716afde06e859640c8d0383f0d59fbdfc8ba2224ca000000000000aa36a70400";
 
 async function decryptMessage() {
     try {
         console.log("🔓 Starting FHE message decryption...");
         
-        // Initialize FHE instance
+        // Initialize Zama FHE instance
         await hre.fhevm.initializeCLIApi();
-        console.log("✅ FHE instance initialized via Hardhat plugin");
+        console.log("✅ FHE instance initialized!");
 
         const provider = await getProvider(fordefiConfig);
         if (!provider) throw new Error("Failed to initialize provider");
@@ -40,7 +40,7 @@ async function decryptMessage() {
 
         // Step 3: Set up EIP712 parameters
         const startTimeStamp = Math.floor(Date.now() / 1000).toString();
-        const durationDays = '10'; // Valid for 10 days
+        const durationDays = '10';
         const contractAddresses = [CONTRACT_ADDRESS];
 
         console.log("📝 Creating EIP712 signature request...");
@@ -109,7 +109,6 @@ async function decryptMessage() {
     }
 }
 
-// Run the decryption
 main().catch(console.error);
 
 async function main() {

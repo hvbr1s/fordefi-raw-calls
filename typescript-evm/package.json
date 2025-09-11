@@ -6,7 +6,7 @@
   "scripts": {
     "raw": "npx ts-node src/raw_contract_call.ts",
     "abi": "npx ts-node src/abi_call.ts",
-    "fhe": "npx hardhat run src/encrypt-message.ts --network sepolia",
+    "encrypt": "npx hardhat run src/encrypt-message.ts --network sepolia",
     "decrypt": "npx hardhat run src/decrypt-message.ts --network sepolia",
     "verify":"npx hardhat verify --network sepolia 0x382E525C690C003f173fdF57270FA0b04721e7F7"
   },

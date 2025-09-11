@@ -1,4 +1,4 @@
-import { fordefiConfig, CONTRACT_ADDRESS, DESTINATION_ADDRESS } from './config';
+import { fordefiConfig, CONTRACT_ADDRESS, DESTINATION_ADDRESS, MESSAGE } from './config';
 import { getProvider } from './get-provider';
 import { ethers } from 'ethers';
 import hre from 'hardhat';
@@ -18,14 +18,13 @@ async function main() {
         console.log("✅ FHE instance initialized via Hardhat plugin");
 
         // Convert text to reversible encoded number (ensure it fits in uint32)
-        const messageText = "Yo!";  
         console.log("🔤 Starting text encoding process...");
         
         // Display the encoding process
-        displayEncodingProcess(messageText);
+        displayEncodingProcess(MESSAGE);
         
         // Encode the text to a single number
-        const numericValue = encodeTextWithLength(messageText);
+        const numericValue = encodeTextWithLength(MESSAGE);
         console.log(`✅ Final encoded value: ${numericValue}`);
 
         const encryptedValue = await hre.fhevm
@@ -39,21 +38,16 @@ async function main() {
         console.log("🔐 Input proof (first 100 bytes):", encryptedValue.inputProof ? ethers.hexlify(encryptedValue.inputProof.slice(0, 100)) : "undefined");
 
         const provider = await getProvider(fordefiConfig);
-        if (!provider) throw new Error("Failed to initialize provider");
+        if (!provider) throw new Error("Failed to initialize Fordefi Web3 provider");
         
         const web3Provider = new ethers.BrowserProvider(provider);
         const signer = await web3Provider.getSigner();
         
         // Debug: Check addresses
-        const signerAddress = await signer.getAddress();
-        console.log("🔍 Signer address:", signerAddress);
-        console.log("🔍 Config address:", fordefiConfig.address);
+        console.log("🔍 Signer address:", fordefiConfig.address);
         console.log("🔍 Destination address:", DESTINATION_ADDRESS);
         
-        if (signerAddress.toLowerCase() !== fordefiConfig.address.toLowerCase()) {
-            console.warn("⚠️ Address mismatch detected!");
-        }
-
+        // Create contract instance
         const messengerContract = new ethers.Contract(
             CONTRACT_ADDRESS,
             MESSENGER_ABI,
@@ -73,28 +67,18 @@ async function main() {
         // The inputProof is used by FHE.fromExternal() to validate the encrypted input
         console.log("🔍 Input proof for validation:", encryptedValue.inputProof ? "present" : "missing");
         
-        // Debug: Check if the contract exists and has code
-        const contractCode = await web3Provider.getCode(CONTRACT_ADDRESS);
-        console.log("🔍 Contract has code:", contractCode !== "0x");
-        
-        // Debug: Check balance
-        const balance = await web3Provider.getBalance(signerAddress);
-        console.log("🔍 Signer balance:", ethers.formatEther(balance), "ETH");
-        
-        console.log("🔍 Network chain ID:", await web3Provider.getNetwork().then(n => n.chainId));
-        
+        // Debug: Check balance and gas estimate
+        const balance = await web3Provider.getBalance(fordefiConfig.address);
+        console.log("⛽ Signer balance:", ethers.formatEther(balance), "ETH");        
         try {            
             const gasEstimate = await messengerContract.sendMessage!.estimateGas(
                 DESTINATION_ADDRESS,
                 handleAsBytes32,
                 encryptedValue.inputProof
             );
-            console.log("🔍 Gas estimate:", gasEstimate.toString());
+            console.log("⛽ Gas estimate:", gasEstimate.toString());
         } catch (gasError: any) {
             console.error("❌ Gas estimation failed:", gasError.message);
-            console.error("This suggests the FHE operations are not supported on this network");
-            
-            // Try to decode the error if possible
             if (gasError.data) {
                 console.log("🔍 Error data:", gasError.data);
             }
