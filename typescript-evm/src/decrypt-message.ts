@@ -2,16 +2,14 @@ import { fordefiConfig, CONTRACT_ADDRESS } from './config';
 import { getProvider } from './get-provider';
 import { ethers } from 'ethers';
 import hre from 'hardhat';
-import { decodeTextWithLength, getCharacterBreakdown } from './text-encoding';
+import { getCharacterBreakdown, decodeTextFromUint256 } from './text-encoding';
 
-// The ciphertext handle from the contrcat call event to decrypt
-const CIPHERTEXT_HANDLE = "0x811d0c5198d4b5251868068f333e43c6837aa43194000000000000aa36a70800";
+const CIPHERTEXT_HANDLE = "0xfeab08ddc5c297582f61adc5cfe975d53c22ee4c0c000000000000aa36a70800";
 
 async function decryptMessage() {
     try {
         console.log("🔓 Starting FHE message decryption...");
         
-        // Initialize Zama FHE instance
         await hre.fhevm.initializeCLIApi();
         console.log("✅ FHE instance initialized!");
 
@@ -25,12 +23,10 @@ async function decryptMessage() {
         console.log("🔍 Contract address:", CONTRACT_ADDRESS);
         console.log("🔍 Ciphertext handle to decrypt:", CIPHERTEXT_HANDLE);
 
-        // Step 1: Generate keypair for user decryption
         console.log("🔑 Generating keypair for user decryption...");
         const keypair = hre.fhevm.generateKeypair();
         console.log("✅ Keypair generated");
 
-        // Step 2: Prepare handle-contract pairs
         const handleContractPairs = [
             {
                 handle: CIPHERTEXT_HANDLE,
@@ -38,7 +34,6 @@ async function decryptMessage() {
             },
         ];
 
-        // Step 3: Set up EIP712 parameters
         const startTimeStamp = Math.floor(Date.now() / 1000).toString();
         const durationDays = '10';
         const contractAddresses = [CONTRACT_ADDRESS];
@@ -62,7 +57,6 @@ async function decryptMessage() {
 
         console.log("✅ Signature created:", signature.slice(0, 20) + "...");
 
-        // Step 4: Perform user decryption
         console.log("🔓 Performing user decryption...");
         const result = await hre.fhevm.userDecrypt(
             handleContractPairs,
@@ -75,21 +69,16 @@ async function decryptMessage() {
             durationDays,
         );
 
-        // Step 5: Extract the decrypted value
         const decryptedValue = result[CIPHERTEXT_HANDLE];
         console.log("🎉 Decrypted value:", decryptedValue);
         
-        // Convert back to original message using reversible decoding
-        const numericValue = typeof decryptedValue === 'bigint' ? Number(decryptedValue) : decryptedValue;
-        if (typeof numericValue === 'number') {
-            console.log("📝 Decrypted numeric value:", numericValue);
+        if (typeof decryptedValue === 'bigint') {
+            console.log("📝 Decrypted BigInt value:", decryptedValue.toString());
             
             try {
-                // Decode the number back to text
-                const decodedText = decodeTextWithLength(numericValue);
+                const decodedText = decodeTextFromUint256(decryptedValue);
                 console.log("🎉 Decoded text:", `"${decodedText}"`);
                 
-                // Show the character breakdown
                 const breakdown = getCharacterBreakdown(decodedText);
                 const charDisplay = breakdown.map(({char, code}) => `'${char}':${code}`).join(', ');
                 console.log("📋 Character breakdown:", charDisplay);
@@ -98,9 +87,11 @@ async function decryptMessage() {
                 
             } catch (error: any) {
                 console.error("❌ Failed to decode text:", error.message);
-                console.log("💡 This might be an old message using the sum encoding method");
-                
+                throw error
             }
+        } else {
+            console.log("📝 Decrypted numeric value:", decryptedValue);
+            console.log("⚠️ Unexpected data type - expected BigInt for euint256");
         }
 
     } catch (error: any) {

@@ -2,7 +2,7 @@ import { fordefiConfig, CONTRACT_ADDRESS, DESTINATION_ADDRESS, MESSAGE } from '.
 import { getProvider } from './get-provider';
 import { ethers } from 'ethers';
 import hre from 'hardhat';
-import { encodeTextWithLength, displayEncodingProcess } from './text-encoding';
+import { displayEncodingProcess, encodeTextForUint256 } from './text-encoding';
 
 // Our contract ABI's is at  https://sepolia.etherscan.io/address/0x848bb922511fff65edd121790a049cd8976585ac#code
 const MESSENGER_ABI = [
@@ -24,12 +24,11 @@ async function main() {
         displayEncodingProcess(MESSAGE);
         
         // Encode the text to a single number
-        const numericValue = encodeTextWithLength(MESSAGE);
+        const numericValue = encodeTextForUint256(MESSAGE);
         console.log(`✅ Final encoded value: ${numericValue}`);
 
         const encryptedValue = await hre.fhevm
             .createEncryptedInput(CONTRACT_ADDRESS, fordefiConfig.address)
-            // .add32(numericValue)
             .add256(numericValue)
             .encrypt();
 
