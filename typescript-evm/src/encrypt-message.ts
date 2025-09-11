@@ -2,12 +2,12 @@ import { fordefiConfig, CONTRACT_ADDRESS, DESTINATION_ADDRESS, MESSAGE } from '.
 import { getProvider } from './get-provider';
 import { ethers } from 'ethers';
 import hre from 'hardhat';
-import { encodeTextWithLength, displayEncodingProcess } from './text-encoding';
+import { encodeTextWithLength, displayEncodingProcess, encodeTextForUint256 } from './text-encoding';
 
-// Our contract ABI's is at  https://sepolia.etherscan.io/address/0x848bb922511fff65edd121790a049cd8976585ac#code
+// Updated ABI for euint256 support - using bytes32 for externalEuint256 in ABI
 const MESSENGER_ABI = [
     "function sendMessage(address _to, bytes32 message, bytes calldata inputProof) external",
-    "event Message(address indexed _from, address indexed _to, bytes32 message)"
+    "event Message(address indexed _from, address indexed _to, uint256 message)"
 ];
 
 async function main() {
@@ -17,19 +17,26 @@ async function main() {
         await hre.fhevm.initializeCLIApi();
         console.log("✅ FHE instance initialized via Hardhat plugin");
 
-        // Convert text to reversible encoded number (ensure it fits in uint32)
+        // Convert text to reversible encoded number for uint256
         console.log("🔤 Starting text encoding process...");
         
         // Display the encoding process
         displayEncodingProcess(MESSAGE);
         
-        // Encode the text to a single number
-        const numericValue = encodeTextWithLength(MESSAGE);
-        console.log(`✅ Final encoded value: ${numericValue}`);
+        // Choose encoding based on message length
+        let numericValue: bigint;
+        if (MESSAGE.length > 3) {
+            numericValue = encodeTextForUint256(MESSAGE);
+            console.log(`✅ Final encoded value (uint256): ${numericValue.toString()}`);
+        } else {
+            // Use legacy encoding for short messages
+            numericValue = BigInt(encodeTextWithLength(MESSAGE));
+            console.log(`✅ Final encoded value (legacy): ${numericValue.toString()}`);
+        }
 
         const encryptedValue = await hre.fhevm
             .createEncryptedInput(CONTRACT_ADDRESS, fordefiConfig.address)
-            .add32(numericValue)
+            .add256(numericValue)
             .encrypt();
 
         console.log("✅ Message encrypted successfully!");
@@ -56,7 +63,7 @@ async function main() {
 
         console.log("📤 Sending encrypted message to contract...");
         
-        // Convert the encrypted handle (Uint8Array) to bytes32 format
+        // Convert the encrypted handle (Uint8Array) to bytes32 format for externalEuint256
         const handleBytes = encryptedValue.handles[0];
         console.log("🔍 Handle bytes:", handleBytes);
         
