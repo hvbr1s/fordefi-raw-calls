@@ -1,8 +1,9 @@
 import { fordefiConfig, CONTRACT_ADDRESS, DESTINATION_ADDRESS, MESSAGE } from './config';
+import { displayEncodingProcess, encodeTextForUint256 } from './text-encoding';
 import { getProvider } from './get-provider';
 import { ethers } from 'ethers';
 import hre from 'hardhat';
-import { displayEncodingProcess, encodeTextForUint256 } from './text-encoding';
+
 
 // Our contract ABI's is at  https://sepolia.etherscan.io/address/0x848bb922511fff65edd121790a049cd8976585ac#code
 const MESSENGER_ABI = [

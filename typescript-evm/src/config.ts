@@ -12,10 +12,11 @@ export const DECIMALS = 6;
 export const MESSAGE = "I love you!"; // 30 chars max
 
 export const fordefiConfig: FordefiProviderConfig = {
-    chainId: 11155111, 
+    chainId: 11155111, // or 11155111 for Sepolia
     address: process.env.FORDEFI_EVM_VAULT_ADDRESS as `0x${string}`?? (() => { throw new Error('FORDEFI_EVM_VAULT_ADDRESS is not set'); })(), 
-    apiUserToken: process.env.FORDEFI_API_USER_MACBOOK_PRO_BOT ?? (() => { throw new Error('FORDEFI_API_USER_TOKEN is not set'); })(), 
-    apiPayloadSignKey: fs.readFileSync('./fordefi_secret/private2.pem', 'utf8') ?? (() => { throw new Error('PEM_PRIVATE_KEY is not set'); })(),
+    apiUserToken: process.env.FORDEFI_API_USER_TOKEN ?? (() => { throw new Error('FORDEFI_API_USER_TOKEN is not set'); })(), 
+    apiPayloadSignKey: fs.readFileSync('./fordefi_secret/private.pem', 'utf8') ?? (() => { throw new Error('PEM_PRIVATE_KEY is not set'); })(),
     rpcUrl: 'https://1rpc.io/sepolia', // fallback RPC for Sepolia
-    skipPrediction: true
+    //rpcUrl: "https://eth.llamarpc.com",
+    skipPrediction: false
 };

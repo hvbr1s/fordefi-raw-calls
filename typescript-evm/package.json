@@ -8,7 +8,8 @@
     "abi": "npx ts-node src/abi_call.ts",
     "encrypt": "npx hardhat run src/encrypt-message.ts --network sepolia",
     "decrypt": "npx hardhat run src/decrypt-message.ts --network sepolia",
-    "verify":"npx hardhat verify --network sepolia 0x382E525C690C003f173fdF57270FA0b04721e7F7"
+    "verify":"npx hardhat verify --network sepolia 0x382E525C690C003f173fdF57270FA0b04721e7F7",
+    "sig":"npx ts-node src/message_signer_verification.ts"
   },
   "keywords": [],
   "author": "",

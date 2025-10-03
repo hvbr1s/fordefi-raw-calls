@@ -1,7 +1,10 @@
 import dotenv from 'dotenv'
 import fs from 'fs'
+import { Network } from "@aptos-labs/ts-sdk";
 
 dotenv.config()
+
+export const APTOS_NETWORK = Network.MAINNET
 
 export interface FordefiAptosConfig {
     accessToken: string;
@@ -25,5 +28,5 @@ export const fordefiConfig: FordefiAptosConfig = {
     apiPathEndpoint: '/api/v1/transactions',
     asset: '0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b', // Mainnet USDC
     decimals: 6n, // depends on the asset, check on a block explorer >> https://aptoscan.com/
-    amount: 100n,
+    amount: 1n,
 };
