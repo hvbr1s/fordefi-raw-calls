@@ -2,7 +2,6 @@ import { createAndSignTx, get_tx } from './process_tx';
 import { signWithPrivateKey } from './signer';
 import { buildPayload } from './serializer';
 import { fordefiConfig } from './config';
-import { error } from 'console';
 
 
 async function main(): Promise<void> {
@@ -28,10 +27,9 @@ async function main(): Promise<void> {
   if (signedFordefiTx){
     console.log("Transaction fully signed and submitted to network ✅");
     console.log(`Final transaction ID: ${signedFordefiTx.id}`);
-    const fullySignedTx = await get_tx(fordefiConfig.apiPathEndpoint, fordefiConfig.accessToken,signedFordefiTx.id)
   }
 }
 
-if (require.main === module) {
-  main();
-}
+main().catch(error => {
+    console.error("Unhandled error:", error);
+});
