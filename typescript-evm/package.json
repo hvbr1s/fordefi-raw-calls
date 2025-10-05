@@ -8,8 +8,10 @@
     "abi": "npx ts-node src/abi_call.ts",
     "encrypt": "npx hardhat run src/encrypt-message.ts --network sepolia",
     "decrypt": "npx hardhat run src/decrypt-message.ts --network sepolia",
-    "verify":"npx hardhat verify --network sepolia 0x382E525C690C003f173fdF57270FA0b04721e7F7",
-    "sig":"npx ts-node src/message_signer_verification.ts"
+    "verify": "npx hardhat verify --network sepolia 0x382E525C690C003f173fdF57270FA0b04721e7F7",
+    "sig": "npx ts-node src/message_signer_verification.ts",
+    "batch":"npx hardhat run src/batchTransfer.ts --network sepolia",
+    "check-owner": "npx tsx src/checkOwner.ts"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +34,7 @@
     "@zama-fhe/relayer-sdk": "^0.2.0",
     "dotenv": "^16.4.7",
     "ethers": "^6.14.1",
+    "fhevm-contracts": "^0.2.4",
     "node-fetch": "^3.3.2"
   }
 }
