@@ -28,14 +28,14 @@ export async function buildAptTransferPayload(fordefiConfig: FordefiAptosConfig)
     });
     console.log("Account transaction count: ", txCount)
 
-    // Transfer APT using coin::transfer (1 octa = 0.00000001 APT)
+    // Transfer APT using coin::transfer
     let transaction = await aptos.transaction.build.simple({
         sender: originVaultAddress,
         withFeePayer: false,
         data: {
             function: "0x1::aptos_account::transfer",
             typeArguments: [],
-            functionArguments: [destinationAddress, 1], // 1 octa for testing
+            functionArguments: [destinationAddress, fordefiConfig.amount],
           }
       });
 
