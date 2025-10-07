@@ -4,10 +4,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// METAMASK WALLET
 const PK = process.env.METAMASK_PK!; 
+const USER_ADDRESS = "0x83c1C2a52d56dFb958C52831a3D683cFAfC34c75";
+
+// CONTRACTS
 const ETOKEN_CONTRACT = "0x9Acd0E48bDFB4480AFA1E46a2C8911988c8262D1";
-const USER_ADDRESS = "0x83c1C2a52d56dFb958C52831a3D683cFAfC34c75"; // Owner address
-const BATCHER_CONTRACT_ADDRESS = "0xe5f3E889e43556F83dD1eeDE650ac06040aff2bf";
+const BATCHER_CONTRACT_ADDRESS = "0xC0ed3a47fE04760FAEdB51aC8C45E2E5452df79a";
 const RECIPIENTS = ["0x8BFCF9e2764BC84DE4BBd0a0f5AAF19F47027A73"];
 
 const BATCHER_ABI = [
@@ -31,13 +34,13 @@ async function main() {
         const amountPerRecipient = 1000;
 
         // Encrypt the amount per recipient
-        const encryptedValue = await hre.fhevm
+        const eAmountPerRecipient = await hre.fhevm
             .createEncryptedInput(BATCHER_CONTRACT_ADDRESS, USER_ADDRESS)
             .add64(amountPerRecipient)
             .encrypt();
 
-        console.log("📦 Encrypted amount handle:", encryptedValue.handles);
-        console.log("🔐 Input proof length:", encryptedValue.inputProof?.length || 0);
+        console.log("📦 Encrypted amount handle:", eAmountPerRecipient.handles);
+        console.log("🔐 Input proof length:", eAmountPerRecipient.inputProof?.length || 0);
 
         const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || "https://ethereum-sepolia.publicnode.com");
         const wallet = new ethers.Wallet(PK, provider);
@@ -66,7 +69,7 @@ async function main() {
         // Step 2: Execute batch transfer
         console.log("\n📤 Step 2: Executing batch transfer...");
 
-        const handleAsBytes = encryptedValue.handles[0];
+        const handleAsBytes = eAmountPerRecipient.handles[0];
 
         const balance = await provider.getBalance(wallet.address);
         console.log("⛽ Wallet balance:", ethers.formatEther(balance), "ETH");
@@ -119,7 +122,7 @@ async function main() {
                 ETOKEN_CONTRACT,
                 RECIPIENTS,
                 handleAsBytes,
-                encryptedValue.inputProof
+                eAmountPerRecipient.inputProof
             );
             console.log("⛽ Gas estimate:", gasEstimate.toString());
         } catch (gasError: any) {
@@ -133,7 +136,7 @@ async function main() {
             ETOKEN_CONTRACT,
             RECIPIENTS,
             handleAsBytes,
-            encryptedValue.inputProof
+            eAmountPerRecipient.inputProof
         );
 
         console.log("🔗 Batch transfer transaction hash:", tx.hash);

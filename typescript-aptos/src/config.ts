@@ -18,11 +18,11 @@ export interface FordefiAptosConfig {
     amount: bigint;
     durableNonceAccount?: string
   };
-  
+
 export const fordefiConfig: FordefiAptosConfig = {
     accessToken: process.env.FORDEFI_API_USER_TOKEN || "",
-    originVault: process.env.ORIGIN_VAULT || "",
-    originAddress: process.env.ORIGIN_ADDRESS || "",
+    originVault: process.env.BLACKBOX_VAULT_ID || "",
+    originAddress: process.env.BLACK_BOX_ADDRESS || "",
     destAddress: process.env.DESTINATION_ADDRES || "",
     privateKeyPem: fs.readFileSync('./secret/private.pem', 'utf8'),
     apiPathEndpoint: '/api/v1/transactions',
