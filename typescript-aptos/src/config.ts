@@ -13,10 +13,9 @@ export interface FordefiAptosConfig {
     destAddress: string;
     privateKeyPem: string;
     apiPathEndpoint: string;
-    asset: string;
-    decimals: bigint;
     amount: bigint;
-    durableNonceAccount?: string
+    asset?: string;
+    decimals?: bigint;
   };
 
 export const fordefiConfig: FordefiAptosConfig = {
@@ -26,7 +25,7 @@ export const fordefiConfig: FordefiAptosConfig = {
     destAddress: process.env.DESTINATION_ADDRES || "",
     privateKeyPem: fs.readFileSync('./secret/private.pem', 'utf8'),
     apiPathEndpoint: '/api/v1/transactions',
-    asset: '0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b', // Mainnet USDC
-    decimals: 6n, // depends on the asset, check on a block explorer >> https://aptoscan.com/
-    amount: 1n,
+    amount: 1n
+    // asset: '0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b', // Mainnet USDC
+    // decimals: 6n, // depends on the asset, check on a block explorer >> https://aptoscan.com/,
 };

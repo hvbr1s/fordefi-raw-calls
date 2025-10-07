@@ -28,7 +28,6 @@ export async function buildAptTransferPayload(fordefiConfig: FordefiAptosConfig)
     });
     console.log("Account transaction count: ", txCount)
 
-    // Transfer APT using coin::transfer
     let transaction = await aptos.transaction.build.simple({
         sender: originVaultAddress,
         withFeePayer: false,
@@ -46,7 +45,7 @@ export async function buildAptTransferPayload(fordefiConfig: FordefiAptosConfig)
     });
     console.debug("Simulation successful: ", simulatedTransactionResult?.success)
 
-    // Generate signing message and hash it
+    // Message signing and hash
     const signingMessage = generateSigningMessageForTransaction(transaction);
     const txHash = crypto.createHash('sha256').update(signingMessage).digest('hex');
     const base64Hash = Buffer.from(signingMessage).toString('base64');

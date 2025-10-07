@@ -29,7 +29,6 @@ export async function fetchAndBroadcastTransaction(
   accessToken: string,
   apiPath: string = '/api/v1/transactions'
 ) {
-  // Fetch the transaction from Fordefi
   console.log(`Fetching transaction ${fordefiTxId} from Fordefi...`);
   const fordefiResponse: FordefiTransactionResponse = await get_tx(
     apiPath,
@@ -43,7 +42,7 @@ export async function fetchAndBroadcastTransaction(
     throw new Error(`Transaction not completed. Current state: ${fordefiResponse.state}`);
   }
 
-  // Extract the signature from Fordefi response
+  // Pull sig from Fordefi response
   const signatureBase64 = fordefiResponse.details.signature;
   const signatureBytes = Buffer.from(signatureBase64, 'base64');
 
@@ -52,13 +51,11 @@ export async function fetchAndBroadcastTransaction(
   // Create Ed25519 signature
   const signature = new Ed25519Signature(signatureBytes);
 
-  // Create authenticator
   const authenticator = new AccountAuthenticatorEd25519(
     senderPublicKey,
     signature
   );
 
-  // Submit the signed transaction
   console.log("Submitting transaction to Aptos node...");
   const response = await aptos.transaction.submit.simple({
     transaction: originalTransaction,
@@ -67,7 +64,6 @@ export async function fetchAndBroadcastTransaction(
 
   console.log("Transaction submitted:", response.hash);
 
-  // Wait for transaction to be processed
   const executedTransaction = await aptos.waitForTransaction({
     transactionHash: response.hash,
   });
