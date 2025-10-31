@@ -4,10 +4,9 @@ Concise guide for executing P-Chain transfers and staking operations using Forde
 
 ## Overview
 
-These scripts enable:
+These scripts enable the following actions via black-box signing:
 - **AVAX transfers** on P-Chain
-- **Delegation staking** to validator nodes
-- **Blackbox signing** via Fordefi API (no private key exposure)
+- **Delegation staking** to validator nodes om P-Chain
 
 ## Prerequisites
 
