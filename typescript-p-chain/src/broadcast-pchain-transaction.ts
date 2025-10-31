@@ -1,28 +1,13 @@
 import { PCHAIN_RPC_URL } from "./pchain-config";
+import { FordefiTransactionResponse } from './interfaces';
 import { get_tx } from "./process_tx";
-import crypto from "crypto";
 
-// Dynamic import for avalanchejs to work around module system issues
 let avalanche: any;
 async function getAvalanche() {
     if (!avalanche) {
         avalanche = await import("@avalabs/avalanchejs");
     }
     return avalanche;
-}
-
-interface FordefiTransactionResponse {
-  id: string;
-  state: string;
-  signatures: Array<{
-    data: string;
-    signed_by: any;
-  }>;
-  details: {
-    type: string;
-    signature?: any;
-    hash_binary: string;
-  };
 }
 
 export async function fetchAndBroadcastPChainTransaction(
@@ -62,7 +47,6 @@ export async function fetchAndBroadcastPChainTransaction(
   }
 
   // Pull signature from Fordefi response
-  // The signature is in the signatures array, not in details.signature
   if (!fordefiResponse.signatures || fordefiResponse.signatures.length === 0) {
     throw new Error("No signatures found in completed transaction");
   }
@@ -76,45 +60,7 @@ export async function fetchAndBroadcastPChainTransaction(
 
   const avalanche = await getAvalanche();
 
-  // The signature recovery ID might need adjustment
-  // Try to recover the public key and see if it matches
-  const txBytes = unsignedTx.toBytes();
-  const txHash = Buffer.from(await crypto.subtle.digest('SHA-256', txBytes));
-
-  console.log("Attempting to recover public key from signature...");
-  console.log("Expected public key:", senderPublicKey.toString('hex'));
-
-  // Try recovery with the current v value
-  try {
-    const recoveredPubKey = avalanche.secp256k1.recoverPublicKey(
-      new Uint8Array(txHash),
-      new Uint8Array(signatureBytes)
-    );
-    console.log("Recovered public key:", Buffer.from(recoveredPubKey).toString('hex'));
-
-    if (Buffer.from(recoveredPubKey).toString('hex') !== senderPublicKey.toString('hex')) {
-      console.log("WARNING: Recovered public key doesn't match! Trying alternate recovery ID...");
-
-      // Try flipping the recovery ID between 0 and 1
-      const altSignatureBytes = Buffer.from(signatureBytes);
-      altSignatureBytes[64] = signatureBytes[64] === 0 ? 1 : 0;
-
-      const altRecoveredPubKey = avalanche.secp256k1.recoverPublicKey(
-        new Uint8Array(txHash),
-        new Uint8Array(altSignatureBytes)
-      );
-      console.log("Alternate recovered public key:", Buffer.from(altRecoveredPubKey).toString('hex'));
-
-      if (Buffer.from(altRecoveredPubKey).toString('hex') === senderPublicKey.toString('hex')) {
-        console.log("SUCCESS: Alternate recovery ID matches! Using adjusted signature.");
-        signatureBytes[64] = altSignatureBytes[64];
-      }
-    }
-  } catch (error) {
-    console.log("Could not recover public key:", error);
-  }
-
-  // Create a proper Signature object from the signature bytes
+  // Create a Signature object from the signature bytes
   const signature = new avalanche.Signature(new Uint8Array(signatureBytes));
 
   // Create credentials with the signature in the constructor
@@ -126,18 +72,16 @@ export async function fetchAndBroadcastPChainTransaction(
 
   console.log("Signature added successfully");
 
-  // Broadcast to P-Chain using the correct method
+  // Broadcast to P-Chain
   console.log("Submitting transaction to P-Chain node...");
 
   const pvmApi = new avalanche.pvm.PVMApi(PCHAIN_RPC_URL);
 
-  // Use issueSignedTx as shown in the documentation
   const txId = await pvmApi.issueSignedTx(signedTx);
 
   console.log("Transaction submitted successfully!");
   console.log("Transaction ID:", txId);
 
-  // Check transaction status
   console.log("Checking transaction status...");
   // The txId returned is an object with txID property, extract the string
   const txIdString = typeof txId === 'string' ? txId : txId.txID;
@@ -150,67 +94,6 @@ export async function fetchAndBroadcastPChainTransaction(
 
   return {
     txId: txIdString,
-    status,
-    signedTxHex,
-  };
-}
-
-// Alternative: If Fordefi returns the fully signed transaction
-export async function fetchAndBroadcastPreSignedPChainTransaction(
-  fordefiTxId: string,
-  accessToken: string,
-  apiPath: string = '/api/v1/transactions'
-) {
-  // Poll for transaction completion with retries
-  const maxRetries = 10;
-  const retryDelayMs = 2000;
-  let fordefiResponse: FordefiTransactionResponse | null = null;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    console.log(`Fetching pre-signed transaction ${fordefiTxId} from Fordefi (attempt ${attempt}/${maxRetries})...`);
-    fordefiResponse = await get_tx(
-      apiPath,
-      accessToken,
-      fordefiTxId
-    );
-
-    console.log("Fordefi transaction state:", fordefiResponse!.state);
-
-    if (fordefiResponse!.state === "completed") {
-      break;
-    }
-
-    if (attempt < maxRetries) {
-      console.log(`Transaction not yet completed. Waiting ${retryDelayMs}ms before retry...`);
-      await new Promise(resolve => setTimeout(resolve, retryDelayMs));
-    }
-  }
-
-  if (!fordefiResponse || fordefiResponse.state !== "completed") {
-    throw new Error(`Transaction not completed after ${maxRetries} attempts. Current state: ${fordefiResponse?.state || 'unknown'}`);
-  }
-
-  // Pull signature from Fordefi response
-  if (!fordefiResponse.signatures || fordefiResponse.signatures.length === 0) {
-    throw new Error("No signatures found in completed transaction");
-  }
-  
-  const signedTxHex = fordefiResponse.signatures[0]!.data;
-
-  console.log("Broadcasting pre-signed transaction...");
-
-  const avalanche = await getAvalanche();
-  const pvmApi = new avalanche.pvm.PVMApi(PCHAIN_RPC_URL);
-  const txId = await pvmApi.issueTx(signedTxHex);
-
-  console.log("Transaction submitted successfully!");
-  console.log("Transaction ID:", txId);
-
-  const status = await pvmApi.getTxStatus({ txID: txId });
-  console.log("Transaction status:", status);
-
-  return {
-    txId,
     status,
     signedTxHex,
   };

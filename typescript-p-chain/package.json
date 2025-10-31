@@ -9,9 +9,8 @@
   "scripts": {
     "call": "tsx ./src/run.ts",
     "derive": "tsx ./src/derive_avalanche_p_chain_address.ts",
-    "stake": "tsx ./src/pchain-run.ts",
-    "transfer": "tsx ./src/pchain-transfer-run.ts",
-    "hex-to-pchain": "tsx ./src/hex-to-pchain-address.ts"
+    "stake": "tsx ./src/pchain-staking-run.ts",
+    "transfer": "tsx ./src/pchain-transfer-run.ts"
   },
   "devDependencies": {
     "@types/node": "^24.1.0",

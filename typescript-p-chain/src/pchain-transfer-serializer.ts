@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import crypto from "crypto";
+import { PChainTransferConfig } from './interfaces';
 import { PCHAIN_RPC_URL } from "./pchain-config";
 
 dotenv.config();
@@ -11,16 +12,6 @@ async function getAvalanche() {
         avalanche = await import("@avalabs/avalanchejs");
     }
     return avalanche;
-}
-
-export interface PChainTransferConfig {
-    originVault: string;
-    originAddress: string;
-    destinationAddress: string;
-    amount: bigint; // Amount in nAVAX (1 AVAX = 1e9 nAVAX)
-    accessToken: string;
-    privateKeyPem: string;
-    apiPathEndpoint: string;
 }
 
 export async function buildPChainTransferPayload(transferConfig: PChainTransferConfig) {

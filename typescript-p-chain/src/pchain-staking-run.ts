@@ -1,46 +1,35 @@
-import axios from "axios";
 import dotenv from "dotenv";
+import axios from "axios";
 import { signWithPrivateKey } from './signer';
 import { createAndSignTx } from './process_tx';
-import { PChainTransferConfig } from './interfaces';
 import { fordefiPChainConfig } from "./pchain-config";
-import { publicKeyToPChainAddressCompat } from "./pchain-address-utils";
-import { buildPChainTransferPayload } from "./pchain-transfer-serializer";
+import { buildPChainStakingPayload } from "./pchain-staking-serializer";
 import { fetchAndBroadcastPChainTransaction } from "./broadcast-pchain-transaction";
+import { publicKeyToPChainAddressCompat } from "./pchain-address-utils";
 
 dotenv.config();
 
 async function main() {
     try {
-        console.log("=== Fordefi P-Chain Transfer Flow ===\n");
+        console.log("=== Fordefi P-Chain Staking Flow ===\n");
 
         // Get the public key from environment
-        const publicKeyBase64 = process.env.VAULT_PUBLIC_KEY;
-        const publicKeyBuffer = Buffer.from(publicKeyBase64!, 'base64');
-        
+        const publicKeyBase64 = process.env.VAULT_PUBLIC_KEY || "AylGVK5wbcLMJ5xQ32LlXUyXhP73WNzcF/o2ho+/nj8n";
+        const publicKeyBuffer = Buffer.from(publicKeyBase64, 'base64');
+
         // Derive the correct P-Chain address from public key
         const derivedPChainAddress = await publicKeyToPChainAddressCompat(publicKeyBuffer);
         console.log("Derived P-Chain address from public key:", derivedPChainAddress);
 
-        const destinationAddress = process.env.DESTINATION_ADDRESS || "";
-        const transferAmount = BigInt(Number(fordefiPChainConfig.transferAmount) * 1e9);
-
-        const transferConfig: PChainTransferConfig = {
-            originVault: fordefiPChainConfig.originVault,
-            originAddress: derivedPChainAddress,
-            destinationAddress,
-            amount: transferAmount,
-            accessToken: fordefiPChainConfig.accessToken,
-            privateKeyPem: fordefiPChainConfig.privateKeyPem,
-            apiPathEndpoint: fordefiPChainConfig.apiPathEndpoint,
+        // Update config with derived address
+        const stakingConfig = {
+            ...fordefiPChainConfig,
+            originAddress: derivedPChainAddress
         };
 
-        console.log("\nStep 1: Building P-Chain transfer transaction...");
-        console.log("From address:", transferConfig.originAddress);
-        console.log("To address:", transferConfig.destinationAddress);
-        console.log("Amount:", transferAmount.toString(), "nAVAX");
-        
-        const { payload, rawTransactionHash, txHex, unsignedTx } = await buildPChainTransferPayload(transferConfig);
+        // Step 1: Build the P-Chain staking transaction
+        console.log("\nStep 1: Building P-Chain delegation transaction...");
+        const { payload, rawTransactionHash, txHex, unsignedTx } = await buildPChainStakingPayload(stakingConfig);
 
         console.log("\n=== Transaction Details ===");
         console.log("Raw transaction hash:", rawTransactionHash);
@@ -51,12 +40,13 @@ async function main() {
         const requestPayload = `${fordefiPChainConfig.apiPathEndpoint}|${timestamp}|${requestBody}`;
         const signature = await signWithPrivateKey(requestPayload, fordefiPChainConfig.privateKeyPem);
 
+        // Step 2: Send to Fordefi for signing
         console.log("\n\nStep 2: Sending transaction to Fordefi for signing...");
-        console.log("Vault ID:", transferConfig.originVault);
+        console.log("Vault ID:", fordefiPChainConfig.originVault);
 
         const fordefiResponse = await createAndSignTx(
-            transferConfig.apiPathEndpoint,
-            transferConfig.accessToken,
+            fordefiPChainConfig.apiPathEndpoint,
+            fordefiPChainConfig.accessToken,
             signature,
             timestamp,
             requestBody
@@ -77,8 +67,8 @@ async function main() {
             unsignedTx,
             publicKeyBuffer,
             transactionId,
-            transferConfig.accessToken,
-            transferConfig.apiPathEndpoint
+            fordefiPChainConfig.accessToken,
+            fordefiPChainConfig.apiPathEndpoint
         );
 
         console.log("\n\n=== SUCCESS ===");
