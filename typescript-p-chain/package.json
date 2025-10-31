@@ -8,7 +8,9 @@
   "main": "index.js",
   "scripts": {
     "call": "tsx ./src/run.ts",
-    "derive-aptos": "tsx ./src/derive_aptos_address.ts"
+    "derive": "tsx ./src/derive_avalanche_p_chain_address.ts",
+    "stake": "tsx ./src/pchain-staking-run.ts",
+    "transfer": "tsx ./src/pchain-transfer-run.ts"
   },
   "devDependencies": {
     "@types/node": "^24.1.0",
@@ -16,10 +18,10 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@aptos-labs/gas-station-client": "^2.0.2",
-    "@aptos-labs/ts-sdk": "^3.1.3",
-    "@shinami/clients": "^0.9.6",
-    "axios": "^1.11.0",
-    "dotenv": "^17.2.1"
+    "@avalabs/avalanchejs": "^5.0.0",
+    "axios": "^1.13.1",
+    "bech32": "^2.0.0",
+    "bs58": "^6.0.0",
+    "dotenv": "^17.2.3"
   }
 }

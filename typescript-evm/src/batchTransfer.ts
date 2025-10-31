@@ -9,12 +9,13 @@ const PK = process.env.METAMASK_PK!;
 const USER_ADDRESS = "0x83c1C2a52d56dFb958C52831a3D683cFAfC34c75";
 
 // CONTRACTS
-const ETOKEN_CONTRACT = "0x9Acd0E48bDFB4480AFA1E46a2C8911988c8262D1";
-const BATCHER_CONTRACT_ADDRESS = "0xC0ed3a47fE04760FAEdB51aC8C45E2E5452df79a";
-const RECIPIENTS = ["0x8BFCF9e2764BC84DE4BBd0a0f5AAF19F47027A73"];
+const ETOKEN_CONTRACT = "0x4A8C427Ebe0b22427d23Bbf518fd4A3017a3a4A4";
+const BATCHER_CONTRACT_ADDRESS = "0x6c2C8A3Bd837f8F0c3286885ea17c17392af91df";
+const RECIPIENTS = ["0xF659feEE62120Ce669A5C45Eb6616319D552dD93", "0xED8315fA2Ec4Dd0dA9870Bf8CD57eBf256A90772"];
 
 const BATCHER_ABI = [
     "function batchSendTokenSameAmount(address token, address[] calldata recipients, bytes32 amountPerRecipient, bytes calldata inputProof) external",
+    "function batchSendTokenDifferentAmounts(address token, address[] calldata recipients, bytes32[] calldata amounts, bytes[] calldata inputProofs) external",
     "event BatchTokenTransfer(address indexed sender, address indexed token, bytes32 totalAmount, uint256 recipients)"
 ];
 
@@ -53,18 +54,18 @@ async function main() {
         const eTokenContract = new ethers.Contract(ETOKEN_CONTRACT, ETOKEN_ABI, wallet);
         const batcherContract = new ethers.Contract(BATCHER_CONTRACT_ADDRESS, BATCHER_ABI, wallet);
 
-        // Step 1: Set batcher contract as operator
-        console.log("\n📝 Step 1: Setting batcher contract as operator...");
-        // Set operator with expiration time (max uint48 for permanent)
-        const until = 0xFFFFFFFFFFFF; // Max uint48 value
+        // // Step 1: Set batcher contract as operator (ONLY REQUIRED ONCE!)
+        // console.log("\n📝 Step 1: Setting batcher contract as operator...");
+        // // Set operator with expiration time (max uint48 for permanent)
+        // const until = 0xFFFFFFFFFFFF; // Max uint48 value
 
-        const approveTx = await eTokenContract.setOperator!(
-            BATCHER_CONTRACT_ADDRESS,
-            until
-        );
-        console.log("🔗 SetOperator transaction hash:", approveTx.hash);
-        await approveTx.wait();
-        console.log("✅ Operator set confirmed");
+        // const approveTx = await eTokenContract.setOperator!(
+        //     BATCHER_CONTRACT_ADDRESS,
+        //     until
+        // );
+        // console.log("🔗 SetOperator transaction hash:", approveTx.hash);
+        // await approveTx.wait();
+        // console.log("✅ Operator set confirmed");
 
         // Step 2: Execute batch transfer
         console.log("\n📤 Step 2: Executing batch transfer...");
