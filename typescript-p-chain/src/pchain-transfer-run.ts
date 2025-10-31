@@ -45,7 +45,6 @@ async function main() {
             apiPathEndpoint: fordefiPChainConfig.apiPathEndpoint,
         };
 
-        // Rest of your code...
         console.log("\nStep 1: Building P-Chain transfer transaction...");
         console.log("From address:", transferConfig.originAddress);
         console.log("To address:", transferConfig.destinationAddress);
