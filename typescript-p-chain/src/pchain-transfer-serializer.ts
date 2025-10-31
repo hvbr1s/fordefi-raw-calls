@@ -1,9 +1,17 @@
 import dotenv from "dotenv";
 import crypto from "crypto";
-const avalanche = require("@avalabs/avalanchejs");
 import { FordefiPChainConfig, PCHAIN_RPC_URL } from "./pchain-config";
 
 dotenv.config();
+
+// Dynamic import for avalanchejs to work around module system issues
+let avalanche: any;
+async function getAvalanche() {
+    if (!avalanche) {
+        avalanche = await import("@avalabs/avalanchejs");
+    }
+    return avalanche;
+}
 
 export interface PChainTransferConfig {
     originVault: string;
@@ -16,6 +24,10 @@ export interface PChainTransferConfig {
 }
 
 export async function buildPChainTransferPayload(transferConfig: PChainTransferConfig) {
+    // Get avalanche module
+    const avalanche = await getAvalanche();
+    const { bech32 } = await import("bech32");
+
     // Initialize PVM API
     const pvmApi = new avalanche.pvm.PVMApi(PCHAIN_RPC_URL);
 
@@ -31,16 +43,26 @@ export async function buildPChainTransferPayload(transferConfig: PChainTransferC
     console.log("P-Chain ID:", context.pBlockchainID);
     console.log("AVAX Asset ID:", context.avaxAssetID);
 
-    // Convert P-Chain addresses to bytes
-    const fromAddresses = [avalanche.utils.stringToAddress(originAddress, 'P')];
-    const fromAddressesBytes = fromAddresses.map(addr => addr.toBytes());
+    // Convert P-Chain addresses to bytes using standard bech32 library
+    // Remove chain prefix (P- or p-) if present
+    const fromAddressBech32 = originAddress.toLowerCase().startsWith('p-') 
+        ? originAddress.substring(2) 
+        : originAddress;
+    const fromDecoded = bech32.decode(fromAddressBech32);
+    const fromAddressBytes = new Uint8Array(bech32.fromWords(fromDecoded.words));
+    const fromAddressesBytes = [fromAddressBytes];
 
-    const toAddress = avalanche.utils.stringToAddress(destinationAddress, 'P');
-    const toAddressBytes = toAddress.toBytes();
+    const toAddressBech32 = destinationAddress.toLowerCase().startsWith('p-') 
+        ? destinationAddress.substring(2) 
+        : destinationAddress;
+    const toDecoded = bech32.decode(toAddressBech32);
+    const toAddressBytes = new Uint8Array(bech32.fromWords(toDecoded.words));
 
     // Fetch UTXOs
+    // Use the full address with uppercase P- prefix
+    const fullFromAddress = `P-${fromAddressBech32}`;
     const { utxos } = await pvmApi.getUTXOs({
-        addresses: [originAddress],
+        addresses: [fullFromAddress],
     });
 
     console.log(`Found ${utxos.length} UTXOs`);

@@ -23,7 +23,6 @@ const ripemd160Hash = createHash("ripemd160")
   .digest();
 
 // 4) Bech32 encoding for Avalanche
-// Using a simplified bech32 implementation
 function bech32Encode(hrp: string, data: Buffer): string {
   const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
 
@@ -57,7 +56,7 @@ function bech32Encode(hrp: string, data: Buffer): string {
   }
 
   const values = hrpExpanded.concat(words).concat([0, 0, 0, 0, 0, 0]);
-  const polymod = bech32Polymod(values);
+  const polymod = bech32Polymod(values) ^ 1;  // XOR with 1 here!
 
   const checksum: number[] = [];
   for (let i = 0; i < 6; i++) {
@@ -82,7 +81,7 @@ function bech32Polymod(values: number[]): number {
     chk = ((chk & 0x1ffffff) << 5) ^ value;
     for (let i = 0; i < 5; i++) {
       if ((b >> i) & 1) {
-        chk ^= GEN[i];
+        chk ^= GEN[i]!;
       }
     }
   }

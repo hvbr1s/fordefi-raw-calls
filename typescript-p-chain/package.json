@@ -10,7 +10,8 @@
     "call": "tsx ./src/run.ts",
     "derive": "tsx ./src/derive_avalanche_p_chain_address.ts",
     "stake": "tsx ./src/pchain-run.ts",
-    "transfer": "tsx ./src/pchain-transfer-run.ts"
+    "transfer": "tsx ./src/pchain-transfer-run.ts",
+    "hex-to-pchain": "tsx ./src/hex-to-pchain-address.ts"
   },
   "devDependencies": {
     "@types/node": "^24.1.0",
@@ -20,6 +21,8 @@
   "dependencies": {
     "@avalabs/avalanchejs": "^5.0.0",
     "axios": "^1.13.1",
+    "bech32": "^2.0.0",
+    "bs58": "^6.0.0",
     "dotenv": "^17.2.3"
   }
 }

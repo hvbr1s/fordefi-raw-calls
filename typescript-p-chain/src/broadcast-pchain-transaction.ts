@@ -1,13 +1,25 @@
-const avalanche = require("@avalabs/avalanchejs");
 import { PCHAIN_RPC_URL } from "./pchain-config";
 import { get_tx } from "./process_tx";
+
+// Dynamic import for avalanchejs to work around module system issues
+let avalanche: any;
+async function getAvalanche() {
+    if (!avalanche) {
+        avalanche = await import("@avalabs/avalanchejs");
+    }
+    return avalanche;
+}
 
 interface FordefiTransactionResponse {
   id: string;
   state: string;
+  signatures: Array<{
+    data: string;
+    signed_by: any;
+  }>;
   details: {
     type: string;
-    signature: string;
+    signature?: any;
     hash_binary: string;
   };
 }
@@ -19,21 +31,42 @@ export async function fetchAndBroadcastPChainTransaction(
   accessToken: string,
   apiPath: string = '/api/v1/transactions'
 ) {
-  console.log(`Fetching transaction ${fordefiTxId} from Fordefi...`);
-  const fordefiResponse: FordefiTransactionResponse = await get_tx(
-    apiPath,
-    accessToken,
-    fordefiTxId
-  );
+  // Poll for transaction completion with retries
+  const maxRetries = 10;
+  const retryDelayMs = 2000;
+  let fordefiResponse: FordefiTransactionResponse | null = null;
 
-  console.log("Fordefi transaction state:", fordefiResponse.state);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    console.log(`Fetching transaction ${fordefiTxId} from Fordefi (attempt ${attempt}/${maxRetries})...`);
+    fordefiResponse = await get_tx(
+      apiPath,
+      accessToken,
+      fordefiTxId
+    );
 
-  if (fordefiResponse.state !== "completed") {
-    throw new Error(`Transaction not completed. Current state: ${fordefiResponse.state}`);
+    console.log("Fordefi transaction state:", fordefiResponse.state);
+
+    if (fordefiResponse.state === "completed") {
+      break;
+    }
+
+    if (attempt < maxRetries) {
+      console.log(`Transaction not yet completed. Waiting ${retryDelayMs}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+    }
+  }
+
+  if (!fordefiResponse || fordefiResponse.state !== "completed") {
+    throw new Error(`Transaction not completed after ${maxRetries} attempts. Current state: ${fordefiResponse?.state || 'unknown'}`);
   }
 
   // Pull signature from Fordefi response
-  const signatureBase64 = fordefiResponse.details.signature;
+  // The signature is in the signatures array, not in details.signature
+  if (!fordefiResponse.signatures || fordefiResponse.signatures.length === 0) {
+    throw new Error("No signatures found in completed transaction");
+  }
+  
+  const signatureBase64 = fordefiResponse.signatures[0].data;
   const signatureBytes = Buffer.from(signatureBase64, 'base64');
 
   console.log("Signature extracted (base64):", signatureBase64);
@@ -49,6 +82,7 @@ export async function fetchAndBroadcastPChainTransaction(
 
   // Add signature to the unsigned transaction using the built-in method
   console.log("Adding signature to unsigned transaction...");
+  console.log("Signature bytes (hex):", signatureBytes.toString('hex'));
 
   // UnsignedTx in v5 has an addSignature method
   unsignedTx.addSignature(new Uint8Array(signatureBytes));
@@ -62,12 +96,25 @@ export async function fetchAndBroadcastPChainTransaction(
 
   console.log("Signed transaction hex:", signedTxHex.substring(0, 100) + "...");
   console.log("Signed transaction size:", signedTxBytes.length, "bytes");
+  console.log("Unsigned transaction size was:", unsignedTx.toBytes().length, "bytes");
+  
+  // Log first bytes to compare
+  console.log("First 20 bytes (hex):", signedTxHex.substring(0, 40));
+  console.log("Last 20 bytes (hex):", signedTxHex.substring(signedTxHex.length - 40));
 
   // Broadcast to P-Chain
   console.log("Submitting transaction to P-Chain node...");
 
+  const avalanche = await getAvalanche();
   const pvmApi = new avalanche.pvm.PVMApi(PCHAIN_RPC_URL);
-  const txId = await pvmApi.issueTx(signedTxHex);
+  
+  // Try with the proper format - encode the hex to CB58 manually using base58
+  const base58 = await import('bs58');
+  const txCB58 = base58.default.encode(signedTxBytes);
+  console.log("Transaction in CB58:", txCB58.substring(0, 100) + "...");
+  
+  // Pass the CB58-encoded transaction
+  const txId = await pvmApi.issueTx(txCB58);
 
   console.log("Transaction submitted successfully!");
   console.log("Transaction ID:", txId);
@@ -90,24 +137,45 @@ export async function fetchAndBroadcastPreSignedPChainTransaction(
   accessToken: string,
   apiPath: string = '/api/v1/transactions'
 ) {
-  console.log(`Fetching pre-signed transaction ${fordefiTxId} from Fordefi...`);
-  const fordefiResponse: FordefiTransactionResponse = await get_tx(
-    apiPath,
-    accessToken,
-    fordefiTxId
-  );
+  // Poll for transaction completion with retries
+  const maxRetries = 10;
+  const retryDelayMs = 2000;
+  let fordefiResponse: FordefiTransactionResponse | null = null;
 
-  console.log("Fordefi transaction state:", fordefiResponse.state);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    console.log(`Fetching pre-signed transaction ${fordefiTxId} from Fordefi (attempt ${attempt}/${maxRetries})...`);
+    fordefiResponse = await get_tx(
+      apiPath,
+      accessToken,
+      fordefiTxId
+    );
 
-  if (fordefiResponse.state !== "completed") {
-    throw new Error(`Transaction not completed. Current state: ${fordefiResponse.state}`);
+    console.log("Fordefi transaction state:", fordefiResponse.state);
+
+    if (fordefiResponse.state === "completed") {
+      break;
+    }
+
+    if (attempt < maxRetries) {
+      console.log(`Transaction not yet completed. Waiting ${retryDelayMs}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+    }
   }
 
-  // If Fordefi returns the complete signed transaction bytes
-  const signedTxHex = fordefiResponse.details.signature;
+  if (!fordefiResponse || fordefiResponse.state !== "completed") {
+    throw new Error(`Transaction not completed after ${maxRetries} attempts. Current state: ${fordefiResponse?.state || 'unknown'}`);
+  }
+
+  // Pull signature from Fordefi response
+  if (!fordefiResponse.signatures || fordefiResponse.signatures.length === 0) {
+    throw new Error("No signatures found in completed transaction");
+  }
+  
+  const signedTxHex = fordefiResponse.signatures[0].data;
 
   console.log("Broadcasting pre-signed transaction...");
 
+  const avalanche = await getAvalanche();
   const pvmApi = new avalanche.pvm.PVMApi(PCHAIN_RPC_URL);
   const txId = await pvmApi.issueTx(signedTxHex);
 

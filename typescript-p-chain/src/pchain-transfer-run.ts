@@ -1,8 +1,11 @@
 import dotenv from "dotenv";
 import axios from "axios";
+import { signWithPrivateKey } from './signer';
+import { createAndSignTx } from './process_tx';
 import { fordefiPChainConfig } from "./pchain-config";
 import { buildPChainTransferPayload, PChainTransferConfig } from "./pchain-transfer-serializer";
 import { fetchAndBroadcastPChainTransaction } from "./broadcast-pchain-transaction";
+import { publicKeyToPChainAddressCompat, normalizePChainAddress } from "./pchain-address-utils";
 
 dotenv.config();
 
@@ -10,19 +13,31 @@ async function main() {
     try {
         console.log("=== Fordefi P-Chain Transfer Flow ===\n");
 
+        // Get the public key from environment
+        const publicKeyBase64 = process.env.VAULT_PUBLIC_KEY || "AylGVK5wbcLMJ5xQ32LlXUyXhP73WNzcF/o2ho+/nj8n";
+        const publicKeyBuffer = Buffer.from(publicKeyBase64, 'base64');
+        
+        // Derive the correct P-Chain address from public key
+        const derivedPChainAddress = await publicKeyToPChainAddressCompat(publicKeyBuffer);
+        console.log("Derived P-Chain address from public key:", derivedPChainAddress);
+
         // Get transfer-specific config from environment
-        const destinationAddress = process.env.DESTINATION_ADDRESS || "";
+        let destinationAddress = process.env.DESTINATION_ADDRESS || "";
         const transferAmount = process.env.TRANSFER_AMOUNT
             ? BigInt(Number(process.env.TRANSFER_AMOUNT) * 1e9) // Convert AVAX to nAVAX
-            : 1_000_000_000n; // Default 1 AVAX
+            : 1_000_000n; // 0.001 AVAX
 
         if (!destinationAddress) {
             throw new Error("DESTINATION_ADDRESS environment variable is required");
         }
 
+        // Normalize destination address
+        destinationAddress = normalizePChainAddress(destinationAddress);
+        console.log("Destination address:", destinationAddress);
+
         const transferConfig: PChainTransferConfig = {
             originVault: fordefiPChainConfig.originVault,
-            originAddress: fordefiPChainConfig.originAddress,
+            originAddress: derivedPChainAddress,
             destinationAddress,
             amount: transferAmount,
             accessToken: fordefiPChainConfig.accessToken,
@@ -30,39 +45,44 @@ async function main() {
             apiPathEndpoint: fordefiPChainConfig.apiPathEndpoint,
         };
 
-        // Step 1: Build the P-Chain transfer transaction
-        console.log("Step 1: Building P-Chain transfer transaction...");
+        // Rest of your code...
+        console.log("\nStep 1: Building P-Chain transfer transaction...");
+        console.log("From address:", transferConfig.originAddress);
+        console.log("To address:", transferConfig.destinationAddress);
+        console.log("Amount:", transferAmount.toString(), "nAVAX");
+        
         const { payload, rawTransactionHash, txHex, unsignedTx } = await buildPChainTransferPayload(transferConfig);
 
         console.log("\n=== Transaction Details ===");
         console.log("Raw transaction hash:", rawTransactionHash);
         console.log("Transaction hex:", txHex.substring(0, 100) + "...");
 
-        // Step 2: Send to Fordefi for signing
+        const requestBody = JSON.stringify(payload);
+        const timestamp = new Date().getTime();
+        const requestPayload = `${fordefiPChainConfig.apiPathEndpoint}|${timestamp}|${requestBody}`;
+        const signature = await signWithPrivateKey(requestPayload, fordefiPChainConfig.privateKeyPem);
+
         console.log("\n\nStep 2: Sending transaction to Fordefi for signing...");
         console.log("Vault ID:", transferConfig.originVault);
 
-        const fordefiResponse = await axios.post(
-            `https://api.fordefi.com${transferConfig.apiPathEndpoint}`,
-            payload,
-            {
-                headers: {
-                    'Authorization': `Bearer ${transferConfig.accessToken}`,
-                    'Content-Type': 'application/json',
-                }
-            }
+        const fordefiResponse = await createAndSignTx(
+            transferConfig.apiPathEndpoint,
+            transferConfig.accessToken,
+            signature,
+            timestamp,
+            requestBody
         );
 
         console.log("Fordefi response:", fordefiResponse.data);
         const transactionId = fordefiResponse.data.id;
+        console.log(`Fordefi transaction ID: ${transactionId}`);
 
-        // Step 3 & 4: Wait for signing and broadcast
-        console.log("\n\nStep 3: Waiting for signature and broadcasting...");
+        // Wait for signature
+        console.log("\nWaiting for signature...");
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // You need to provide the public key from your vault
-        // This should be the 33-byte compressed secp256k1 public key
-        const publicKeyBase64 = process.env.VAULT_PUBLIC_KEY || "AylGVK5wbcLMJ5xQ32LlXUyXhP73WNzcF/o2ho+/nj8n";
-        const publicKeyBuffer = Buffer.from(publicKeyBase64, 'base64');
+        // Step 3 & 4: Fetch signature and broadcast
+        console.log("\nStep 3: Fetching signature and broadcasting to P-Chain...");
 
         const result = await fetchAndBroadcastPChainTransaction(
             unsignedTx,

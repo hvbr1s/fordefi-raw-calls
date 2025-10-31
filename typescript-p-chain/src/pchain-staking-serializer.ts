@@ -1,11 +1,22 @@
 import dotenv from "dotenv";
 import crypto from "crypto";
-const avalanche = require("@avalabs/avalanchejs");
 import { FordefiPChainConfig, PCHAIN_RPC_URL } from "./pchain-config";
 
 dotenv.config();
 
+// Dynamic import for avalanchejs to work around module system issues
+let avalanche: any;
+async function getAvalanche() {
+    if (!avalanche) {
+        avalanche = await import("@avalabs/avalanchejs");
+    }
+    return avalanche;
+}
+
 export async function buildPChainStakingPayload(fordefiConfig: FordefiPChainConfig) {
+    // Get avalanche module
+    const avalanche = await getAvalanche();
+
     // Initialize PVM API
     const pvmApi = new avalanche.pvm.PVMApi(PCHAIN_RPC_URL);
 
@@ -17,9 +28,9 @@ export async function buildPChainStakingPayload(fordefiConfig: FordefiPChainConf
     console.log("Network ID:", context.networkID);
     console.log("P-Chain ID:", context.pBlockchainID);
 
-    // Convert P-Chain address to bytes
-    const fromAddresses = [avalanche.utils.stringToAddress(originAddress, 'P')];
-    const fromAddressesBytes = fromAddresses.map(addr => addr.toBytes());
+    // Convert P-Chain address to bytes using parseBech32
+    const fromAddressBytes = avalanche.utils.parseBech32(originAddress);
+    const fromAddressesBytes = [fromAddressBytes];
 
     // Fetch UTXOs
     const { utxos } = await pvmApi.getUTXOs({
@@ -38,7 +49,7 @@ export async function buildPChainStakingPayload(fordefiConfig: FordefiPChainConf
 
     // Prepare reward addresses (where staking rewards will go)
     const rewardAddresses = fordefiConfig.rewardAddress
-        ? [avalanche.utils.stringToAddress(fordefiConfig.rewardAddress, 'P').toBytes()]
+        ? [avalanche.utils.parseBech32(fordefiConfig.rewardAddress)]
         : fromAddressesBytes;
 
     console.log("Building delegation transaction...");

@@ -5,11 +5,11 @@
     "esModuleInterop": true,
     "allowJs": true,
     "resolveJsonModule": true,
-    "moduleDetection": "force",
+    "moduleDetection": "auto",
     "isolatedModules": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "module": "NodeNext",
-    "moduleResolution": "nodenext"
+    "module": "commonjs",
+    "moduleResolution": "node"
   }
 }
