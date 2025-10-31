@@ -12,8 +12,8 @@ These scripts enable:
 ## Prerequisites
 
 - Node.js with TypeScript support
-- Fordefi black box vault
-- Fordefi API User and API Sgner running (documentation)[https://docs.fordefi.com/developers/getting-started/set-up-an-api-signer/api-signer-docker]
+- Fordefi Black Box vault [documentation](https://docs.fordefi.com/api/latest/openapi/vaults/create_vault_api_v1_vaults_post)
+- Fordefi API User and API Sgner running [documentation](https://docs.fordefi.com/developers/getting-started/set-up-an-api-signer/api-signer-docker)
 - AVAX balance on P-Chain
 - Your API User private key in a `./secret` folder
 
