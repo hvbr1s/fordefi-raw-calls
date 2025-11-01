@@ -5,7 +5,6 @@ import { PCHAIN_RPC_URL } from "./pchain-config";
 
 dotenv.config();
 
-// Dynamic import for avalanchejs to work around module system issues
 let avalanche: any;
 async function getAvalanche() {
     if (!avalanche) {
