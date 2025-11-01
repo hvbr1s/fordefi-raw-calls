@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import crypto from "crypto";
-import { PChainTransferConfig } from './interfaces';
 import { PCHAIN_RPC_URL } from "./pchain-config";
+import { PChainTransferConfig } from './interfaces';
 
 dotenv.config();
 
