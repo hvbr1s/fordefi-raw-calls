@@ -4,7 +4,7 @@ import fs from 'fs';
 
 dotenv.config()
 
-export const AVALANCHE_NETWORK = process.env.AVALANCHE_NETWORK || 'mainnet'; // mainnet, fuji, or custom
+export const AVALANCHE_NETWORK = process.env.AVALANCHE_NETWORK || 'mainnet'; // mainnet, testnet, or custom
 export const PCHAIN_RPC_URL = process.env.PCHAIN_RPC_URL || 'https://api.avax.network';
 
 export const fordefiPChainConfig: FordefiPChainConfig = {

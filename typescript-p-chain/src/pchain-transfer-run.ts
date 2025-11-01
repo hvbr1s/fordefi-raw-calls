@@ -75,7 +75,6 @@ async function main() {
 
         const result = await fetchAndBroadcastPChainTransaction(
             unsignedTx,
-            publicKeyBuffer,
             transactionId,
             transferConfig.accessToken,
             transferConfig.apiPathEndpoint

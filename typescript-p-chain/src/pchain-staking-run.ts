@@ -1,11 +1,11 @@
-import dotenv from "dotenv";
 import axios from "axios";
+import dotenv from "dotenv";
 import { signWithPrivateKey } from './signer';
 import { createAndSignTx } from './process_tx';
 import { fordefiPChainConfig } from "./pchain-config";
 import { buildPChainStakingPayload } from "./pchain-staking-serializer";
-import { fetchAndBroadcastPChainTransaction } from "./broadcast-pchain-transaction";
 import { publicKeyToPChainAddressCompat } from "./pchain-address-utils";
+import { fetchAndBroadcastPChainTransaction } from "./broadcast-pchain-transaction";
 
 dotenv.config();
 
@@ -65,7 +65,6 @@ async function main() {
 
         const result = await fetchAndBroadcastPChainTransaction(
             unsignedTx,
-            publicKeyBuffer,
             transactionId,
             fordefiPChainConfig.accessToken,
             fordefiPChainConfig.apiPathEndpoint

@@ -12,7 +12,6 @@ async function getAvalanche() {
 
 export async function fetchAndBroadcastPChainTransaction(
   unsignedTx: any, // UnsignedTx type
-  senderPublicKey: Buffer, // 33-byte compressed secp256k1 public key
   fordefiTxId: string,
   accessToken: string,
   apiPath: string = '/api/v1/transactions'
