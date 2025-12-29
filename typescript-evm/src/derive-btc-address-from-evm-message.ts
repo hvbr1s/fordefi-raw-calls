@@ -13,6 +13,9 @@ const txId = "0x02cb5dff16405a5c492c37085561ad87756b2b642be6610a756d9e51ee3f9304
     const pubkey = ecc.pointCompress(Buffer.from(pubStr, 'hex'), true);
     const pubBuff = bcrypto.hash160(Buffer.from(pubkey));
 
+    console.log('recovered pubkey (compressed hex):', Buffer.from(pubkey).toString('hex'));
+    console.log('recovered pubkey (uncompressed hex):', pubStr);
+
     const ethAddress = ethers.keccak256('0x'+pubStr.slice(2)).slice(-40);
     console.log('eth', '0x'+ethAddress);
     console.log('btc mainnet', toBase58Check(pubBuff, 0x00));
