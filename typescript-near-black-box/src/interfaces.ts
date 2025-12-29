@@ -13,8 +13,8 @@ export interface FordefiNearConfig {
     originVault: string;
     originAddress: string; // NEAR address (implicit hex or named account)
     privateKeyPem: string;
-    apiPathEndpoint: string;
-    transferAmount: number;
+    apiPathEndpoint: string; 
+    transferAmount: number; // Amount in NEAR to transfer
     stakeAmount: number; // Amount in NEAR to stake
     stakingPoolId: string; // Staking pool contract (e.g., "pool.near" suffix)
 }
