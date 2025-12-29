@@ -1,0 +1,9 @@
+    {
+      "key_id": "f873cdf7-f091-4d57-8864-d25e200c1f29",
+      "key_name": "native-ecdsa",
+      "key_type": "ecdsa_secp256k1",
+      "key_origin": "native",
+      "xpub": "xpub661MyMwAqRbcFCvjYemPD3f6o3da15jDYLgW9PzyJv6RJN7uwraUpXoXUGqWQs8xWVtqetvFF4AkW1NnHrPWCf1KQoxGSDbFuAbbr5uFBUg",
+      "public_key_compressed": "A+dvHUxsrRdxrfbL9Tnc2vpMCDvl8fYqO0rHbzOjG619",
+      "supports_derivation": true
+    }
