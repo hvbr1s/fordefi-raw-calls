@@ -7,7 +7,8 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "call": "tsx ./src/run.ts",
+    "transfer": "tsx ./src/run.ts",
+    "sign-raw": "tsx ./src/sign-raw-and-broadcast.ts",
     "derive-aptos": "tsx ./src/derive_aptos_address.ts"
   },
   "devDependencies": {

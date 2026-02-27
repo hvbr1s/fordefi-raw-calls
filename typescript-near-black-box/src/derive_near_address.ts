@@ -38,7 +38,8 @@ export async function publicKeyToNearFormat(publicKeyBytes: Buffer): Promise<str
 async function deriveNearAddress() {
     const publicKeyBuffer = Buffer.from(process.env.VAULT_PUBLIC_KEY!, 'base64');
 
-    const implicitAddress = publicKeyToNearImplicitAddress(publicKeyBuffer);
+    // NEAR implicit address is just the hex encoding of the public key
+    const implicitAddress = publicKeyBuffer.toString('hex').toLowerCase();
     const nearPublicKey = await publicKeyToNearFormat(publicKeyBuffer);
 
     console.log('Your NEAR implicit account address:', implicitAddress);
