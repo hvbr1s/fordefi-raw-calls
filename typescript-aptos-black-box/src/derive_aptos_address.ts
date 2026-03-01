@@ -23,5 +23,3 @@ const sha3_256 = createHash("sha3-256")
 const address = "0x" + sha3_256.toString("hex");
 
 console.log("Aptos address:", address);
-// 0x203ba4bbf9f2110f3f1b78cad65f96f2d8833d13b3401d5f82e3d0e14e574046
-// https://explorer.aptoslabs.com/account/0x203ba4bbf9f2110f3f1b78cad65f96f2d8833d13b3401d5f82e3d0e14e574046?network=mainnet

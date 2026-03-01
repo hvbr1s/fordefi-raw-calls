@@ -28,7 +28,7 @@ export async function signRawPayload(
   const base64Payload = Buffer.from(rawBytes).toString("base64");
 
   const payload = {
-    vault_id: fordefiCfg.originVault,
+    vault_id: fordefiCfg.fordefiVaultID,
     signer_type: "api_signer",
     sign_mode: "auto",
     type: "black_box_signature",
@@ -124,7 +124,7 @@ async function main(): Promise<void> {
   console.log(`Current auth key: ${currentAuthKey.toString()}`);
 
   const newPublicKey = await fetchPublicKeyFromFordefiVault(
-    fordefiConfig.originVault,
+    fordefiConfig.fordefiVaultID,
     fordefiConfig.accessToken
   );
 

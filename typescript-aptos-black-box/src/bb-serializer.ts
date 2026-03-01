@@ -12,8 +12,8 @@ const config = new AptosConfig({ network: APTOS_NETWORK });
 const aptos = new Aptos(config);
 
 export async function buildAptTransferPayload(fordefiConfig: FordefiAptosConfig){
-    const originVaultAddress = fordefiConfig.originAddress
-    const destinationAddress = fordefiConfig.destAddress
+    const originVaultAddress = fordefiConfig.fordefiVaultAddress
+    const destinationAddress = fordefiConfig.externalWalletAddress
 
     const senderAccount = await aptos.account.getAccountInfo({
         accountAddress: originVaultAddress
@@ -45,7 +45,6 @@ export async function buildAptTransferPayload(fordefiConfig: FordefiAptosConfig)
     });
     console.debug("Simulation successful: ", simulatedTransactionResult?.success)
 
-    // Message signing and hash
     const signingMessage = generateSigningMessageForTransaction(transaction);
     const txHash = crypto.createHash('sha256').update(signingMessage).digest('hex');
     const base64Hash = Buffer.from(signingMessage).toString('base64');
@@ -54,7 +53,7 @@ export async function buildAptTransferPayload(fordefiConfig: FordefiAptosConfig)
     console.log("Base64 signing message:", base64Hash);
 
     const payload = {
-        vault_id: fordefiConfig.originVault,
+        vault_id: fordefiConfig.fordefiVaultID,
         signer_type: 'api_signer',
         sign_mode: 'auto',
         type: "black_box_signature",

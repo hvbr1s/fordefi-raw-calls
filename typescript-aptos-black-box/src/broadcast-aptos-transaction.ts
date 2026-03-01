@@ -42,13 +42,10 @@ export async function fetchAndBroadcastTransaction(
     throw new Error(`Transaction not completed. Current state: ${fordefiResponse.state}`);
   }
 
-  // Pull sig from Fordefi response
   const signatureBase64 = fordefiResponse.details.signature;
   const signatureBytes = Buffer.from(signatureBase64, 'base64');
-
   console.log("Signature extracted:", signatureBase64);
 
-  // Create Ed25519 signature
   const signature = new Ed25519Signature(signatureBytes);
 
   const authenticator = new AccountAuthenticatorEd25519(

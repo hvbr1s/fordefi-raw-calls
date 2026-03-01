@@ -47,7 +47,7 @@ async function main(): Promise<void> {
 
   // Fetch public key from Fordefi vault
   console.log("\nFetching public key from vault...");
-  const publicKey = await fetchPublicKeyFromVault(fordefiConfig.originVault, fordefiConfig.accessToken);
+  const publicKey = await fetchPublicKeyFromVault(fordefiConfig.fordefiVaultID, fordefiConfig.accessToken);
 
   // Fetch signature and broadcast to Aptos
   console.log("\nFetching signature and broadcasting to Aptos...");
